@@ -1,11 +1,11 @@
 
 import AppLayout from '@/layouts/AppLayout'
-import PageHeader from '@/components/PageHeader'
+import PageHeader from '@/components/ui/Header'
 import { useParams, useNavigate } from 'react-router-dom'
 export default function CircleForm(){
   const {id}=useParams(); const nav=useNavigate(); const editing=id && id!=='new'
   return (<AppLayout>
-    <PageHeader title={editing?'Edit Circle':'New Circle'} />
+    <PageHeader  />
     <form className="grid gap-4 max-w-xl bg-white p-6 rounded-xl shadow">
       <input className="border rounded px-3 py-2" placeholder="Circle name"/>
       <select className="border rounded px-3 py-2"><option>Type</option><option value="memorization">Memorization</option><option value="tajweed">Tajweed</option><option value="arabic">Arabic</option></select>

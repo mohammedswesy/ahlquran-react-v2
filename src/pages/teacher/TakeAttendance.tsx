@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/AppLayout'
-import PageHeader from '@/components/PageHeader'
-import Card from '@/components/Card'
+import PageHeader from '@/components/ui/Header'
+import {Card} from '@/components/ui/card'
 import { useToast } from '@/store/toast'
 import { useMemo, useState } from 'react'
 import clsx from 'clsx'
@@ -43,8 +43,8 @@ export default function TakeAttendance() {
         <AppLayout>
             <div dir="rtl" className="space-y-4">
                 <PageHeader
-                    title="تسجيل الحضور"
-                    subtitle="حدد حالة كل طالب لليوم"
+                    // title="تسجيل الحضور"
+                    // subtitle="حدد حالة كل طالب لليوم"
                 />
 
                 {/* شريط إحصائيات صغير */}

@@ -83,215 +83,235 @@
 // }
 
 // src/layouts/AppLayout.tsx
-import { ReactNode, useMemo } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import Breadcrumbs from '@/components/Breadcrumbs'
-import clsx from 'clsx'
-import { useAuth } from '@/store/auth'
-import {
-  FaArrowRightFromBracket,
-  FaHouse,
-  FaEnvelope,
-  FaGear,
-  FaUsers,
-  FaUserGroup,
-  FaIdBadge,
-  FaBook,
-  FaCalendarCheck,
-  FaClipboardList,
-} from 'react-icons/fa6'
-import { FaChalkboardTeacher, FaChartBar } from 'react-icons/fa'
+// import { ReactNode, useMemo } from 'react'
+// import { Link, useLocation } from 'react-router-dom'
+// import Breadcrumbs from '@/components/Breadcrumbs'
+// import clsx from 'clsx'
+// import { useAuth } from '@/store/auth'
+// import {
+//   FaArrowRightFromBracket,
+//   FaHouse,
+//   FaEnvelope,
+//   FaGear,
+//   FaUsers,
+//   FaUserGroup,
+//   FaIdBadge,
+//   FaBook,
+//   FaCalendarCheck,
+//   FaClipboardList,
+// } from 'react-icons/fa6'
+// import { FaChalkboardTeacher, FaChartBar } from 'react-icons/fa'
 
-type Item = { to: string; label: string; icon: JSX.Element }
-type Section = { title?: string; items: Item[] }
+// type Item = { to: string; label: string; icon: JSX.Element }
+// type Section = { title?: string; items: Item[] }
 
-const ADMIN_ROLES = ['super-admin', 'org-admin', 'institute-admin', 'sub-admin'] as const
+// const ADMIN_ROLES = ['super-admin', 'org-admin', 'institute-admin', 'sub-admin'] as const
 
-export default function AppLayout({ children }: { children: ReactNode }) {
-  const { logout, role } = useAuth()
-  const loc = useLocation()
-  const r = String(role || '')
+// export default function AppLayout({ children }: { children: ReactNode }) {
+//   const { logout, role } = useAuth()
+//   const loc = useLocation()
+//   const r = String(role || '')
 
-  const user = {
-    name: 'الشيخ محمد',
-    roleLabel:
-      ADMIN_ROLES.includes(r as any) ? 'المشرف العام'
-        : r === 'teacher' ? 'معلّم'
-          : r === 'student' ? 'طالب'
-            : r === 'parent' ? 'وليّ أمر'
-              : r === 'employee' ? 'موظّف'
-                : 'مستخدم',
-    online: true,
-  }
+//   const user = {
+//     name: 'الشيخ محمد',
+//     roleLabel:
+//       ADMIN_ROLES.includes(r as any) ? 'المشرف العام'
+//         : r === 'teacher' ? 'معلّم'
+//           : r === 'student' ? 'طالب'
+//             : r === 'parent' ? 'وليّ أمر'
+//               : r === 'employee' ? 'موظّف'
+//                 : 'مستخدم',
+//     online: true,
+//   }
 
-  const sections: Section[] = useMemo(() => {
-    if (ADMIN_ROLES.includes(r as any)) {
-      return [
-        {
-          items: [
-            { to: '/admin', label: 'لوحة القيادة', icon: <FaHouse /> },
-            { to: '#', label: 'الرسائل', icon: <FaEnvelope /> },
-            { to: '#', label: 'الإعدادات', icon: <FaGear /> },
-          ],
-        },
-        {
-          title: 'الشؤون الإدارية',
-          items: [
-            { to: '/admin/students', label: 'الطلاب', icon: <FaUsers /> },
-            { to: '/admin/employees', label: 'المعلمين', icon: <FaChalkboardTeacher /> },
-            { to: '/admin/parents', label: 'أولياء الأمور', icon: <FaUserGroup /> },
-            { to: '/admin/circles', label: 'الحلقات', icon: <FaBook /> },
-            { to: '/admin/notifications', label: 'الإشعارات', icon: <FaClipboardList /> },
-          ],
-        },
-      ]
-    }
+//   const sections: Section[] = useMemo(() => {
+//     if (ADMIN_ROLES.includes(r as any)) {
+//       return [
+//         {
+//           items: [
+//             { to: '/admin', label: 'لوحة القيادة', icon: <FaHouse /> },
+//             { to: '#', label: 'الرسائل', icon: <FaEnvelope /> },
+//             { to: '#', label: 'الإعدادات', icon: <FaGear /> },
+//           ],
+//         },
+//         {
+//           title: 'الشؤون الإدارية',
+//           items: [
+//             { to: '/admin/students', label: 'الطلاب', icon: <FaUsers /> },
+//             { to: '/admin/employees', label: 'المعلمين', icon: <FaChalkboardTeacher /> },
+//             { to: '/admin/parents', label: 'أولياء الأمور', icon: <FaUserGroup /> },
+//             { to: '/admin/circles', label: 'الحلقات', icon: <FaBook /> },
+//             { to: '/admin/notifications', label: 'الإشعارات', icon: <FaClipboardList /> },
+//           ],
+//         },
+//       ]
+//     }
 
-    if (r === 'teacher') {
-      return [
-        {
-          items: [
-            { to: '/teacher', label: 'لوحة القيادة', icon: <FaHouse /> },
-            { to: '/teacher/circles', label: 'حلقاتي', icon: <FaBook /> },
-            { to: '/teacher/attendance', label: 'الحضور والغياب', icon: <FaCalendarCheck /> },
-            { to: '/teacher/assessments', label: 'الاختبارات', icon: <FaClipboardList /> },
-          ],
-        },
-      ]
-    }
+//     if (r === 'teacher') {
+//       return [
+//         {
+//           items: [
+//             { to: '/teacher', label: 'لوحة القيادة', icon: <FaHouse /> },
+//             { to: '/teacher/circles', label: 'حلقاتي', icon: <FaBook /> },
+//             { to: '/teacher/attendance', label: 'الحضور والغياب', icon: <FaCalendarCheck /> },
+//             { to: '/teacher/assessments', label: 'الاختبارات', icon: <FaClipboardList /> },
+//           ],
+//         },
+//       ]
+//     }
 
-    if (r === 'student') {
-      return [
-        {
-          items: [
-            { to: '/student', label: 'لوحة القيادة', icon: <FaHouse /> },
-            { to: '/student/progress', label: 'تقدّمي', icon: <FaChartBar /> },
-            { to: '/student/schedule', label: 'جدولي', icon: <FaCalendarCheck /> },
-          ],
-        },
-      ]
-    }
+//     if (r === 'student') {
+//       return [
+//         {
+//           items: [
+//             { to: '/student', label: 'لوحة القيادة', icon: <FaHouse /> },
+//             { to: '/student/progress', label: 'تقدّمي', icon: <FaChartBar /> },
+//             { to: '/student/schedule', label: 'جدولي', icon: <FaCalendarCheck /> },
+//           ],
+//         },
+//       ]
+//     }
 
-    if (r === 'parent') {
-      return [
-        {
-          items: [
-            { to: '/parent', label: 'لوحة القيادة', icon: <FaHouse /> },
-            { to: '/parent/children', label: 'أبنائي', icon: <FaUsers /> },
-            { to: '/parent/reports', label: 'التقارير والشهادات', icon: <FaIdBadge /> },
-          ],
-        },
-      ]
-    }
+//     if (r === 'parent') {
+//       return [
+//         {
+//           items: [
+//             { to: '/parent', label: 'لوحة القيادة', icon: <FaHouse /> },
+//             { to: '/parent/children', label: 'أبنائي', icon: <FaUsers /> },
+//             { to: '/parent/reports', label: 'التقارير والشهادات', icon: <FaIdBadge /> },
+//           ],
+//         },
+//       ]
+//     }
 
-    if (r === 'employee') {
-      return [
-        {
-          items: [
-            { to: '/employee', label: 'لوحة القيادة', icon: <FaHouse /> },
-            { to: '/employee/tasks', label: 'المهام', icon: <FaClipboardList /> },
-            { to: '/employee/people', label: 'دليل الأشخاص', icon: <FaUsers /> },
-          ],
-        },
-      ]
-    }
+//     if (r === 'employee') {
+//       return [
+//         {
+//           items: [
+//             { to: '/employee', label: 'لوحة القيادة', icon: <FaHouse /> },
+//             { to: '/employee/tasks', label: 'المهام', icon: <FaClipboardList /> },
+//             { to: '/employee/people', label: 'دليل الأشخاص', icon: <FaUsers /> },
+//           ],
+//         },
+//       ]
+//     }
 
-    return [{ items: [{ to: '/', label: 'الرئيسية', icon: <FaHouse /> }] }]
-  }, [r])
+//     return [{ items: [{ to: '/', label: 'الرئيسية', icon: <FaHouse /> }] }]
+//   }, [r])
 
-  const isActive = (to: string) =>
-    to !== '#' && (loc.pathname === to || loc.pathname.startsWith(to))
+//   const isActive = (to: string) =>
+//     to !== '#' && (loc.pathname === to || loc.pathname.startsWith(to))
 
-  const gold = '#b48c43'
-  const teal = '#0f5f5c'
+//   const gold = '#b48c43'
+//   const teal = '#0f5f5c'
 
+//   return (
+//     <div dir="rtl" className="min-h-screen bg-gray-100">
+//       {/* شريط علوي */}
+//       <div className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b">
+//         <div className="mx-auto max-w-7xl px-4 py-2 flex items-center justify-between">
+//           <button
+//             onClick={logout}
+//             className="flex items-center gap-2 rounded-xl border px-3 py-1.5 text-[13px] hover:bg-gray-50"
+//           >
+//             <FaArrowRightFromBracket />
+//             <span>تسجيل الخروج</span>
+//           </button>
+//           <div className="text-sm" style={{ color: teal }} />
+//         </div>
+//       </div>
+
+//       {/* المحتوى + الشريط الجانبي */}
+//       <div className="mx-auto max-w-7xl grid grid-cols-12 gap-6 px-4 py-6">
+//         {/* المحتوى (يسار) */}
+//         <main className="col-span-12 lg:col-span-9 order-2 lg:order-1">
+//           <div className="rounded-2xl border bg-white shadow-sm p-5">
+//             <Breadcrumbs />
+//             {children}
+//           </div>
+//         </main>
+
+//         {/* الشريط الجانبي (يمين) */}
+//         <aside className="col-span-12 lg:col-span-3 order-1 lg:order-2">
+//           <div className="rounded-2xl border bg-white shadow-sm p-4">
+//             {/* بطاقة المستخدم */}
+//             <div className="flex items-center gap-3 pb-4 border-b">
+//               <div className="w-12 h-12 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: teal }}>
+//                 <span className="font-bold">ع</span>
+//               </div>
+//               <div>
+//                 <div className="font-semibold">{user.name}</div>
+//                 <div className="text-xs text-gray-500">{user.roleLabel}</div>
+//               </div>
+//               {user.online && (
+//                 <span
+//                   className="ms-auto text-xs px-2 py-0.5 rounded-full"
+//                   style={{ backgroundColor: `${teal}22`, color: teal }}
+//                 >
+//                   متصل
+//                 </span>
+//               )}
+//             </div>
+
+//             {/* القوائم */}
+//             <nav className="mt-4 space-y-5">
+//               {sections.map((sec, idx) => (
+//                 <div key={idx}>
+//                   {sec.title && (
+//                     <div className="mb-2 px-2 text-sm font-semibold" style={{ color: gold }}>
+//                       {sec.title}
+//                     </div>
+//                   )}
+//                   <ul className="space-y-1">
+//                     {sec.items.map((it) => (
+//                       <li key={it.to}>
+//                         <Link
+//                           to={it.to}
+//                           className={clsx(
+//                             'flex items-center gap-2 rounded-xl px-3 py-2 text-[15px]',
+//                             isActive(it.to) ? 'bg-[#b48c43]/10 font-semibold text-[#0f5f5c]' : 'hover:bg-gray-50'
+//                           )}
+//                         >
+//                           <span
+//                             className="text-base"
+//                             style={{ color: isActive(it.to) ? '#b48c43' : '#455a64' }}
+//                           >
+//                             {it.icon}
+//                           </span>
+//                           <span>{it.label}</span>
+//                         </Link>
+//                       </li>
+//                     ))}
+//                   </ul>
+//                 </div>
+//               ))}
+//             </nav>
+//           </div>
+//         </aside>
+//       </div>
+//     </div>
+//   )
+// }
+
+
+// src/layouts/AppLayout.tsx
+import React from "react"
+import Sidebar from "./Sidebar"
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div dir="rtl" className="min-h-screen bg-gray-100">
-      {/* شريط علوي */}
-      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b">
-        <div className="mx-auto max-w-7xl px-4 py-2 flex items-center justify-between">
-          <button
-            onClick={logout}
-            className="flex items-center gap-2 rounded-xl border px-3 py-1.5 text-[13px] hover:bg-gray-50"
-          >
-            <FaArrowRightFromBracket />
-            <span>تسجيل الخروج</span>
-          </button>
-          <div className="text-sm" style={{ color: teal }} />
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50" dir="rtl">
+      <div className="flex">
+        {/* ✅ Sidebar صار يقرأ الدور مباشرة من useAuth */}
+        <Sidebar />
 
-      {/* المحتوى + الشريط الجانبي */}
-      <div className="mx-auto max-w-7xl grid grid-cols-12 gap-6 px-4 py-6">
-        {/* المحتوى (يسار) */}
-        <main className="col-span-12 lg:col-span-9 order-2 lg:order-1">
-          <div className="rounded-2xl border bg-white shadow-sm p-5">
-            <Breadcrumbs />
-            {children}
-          </div>
+        <main className="flex-1 min-w-0 h-screen overflow-y-auto">
+          {/* الهيدر العام أو شريط علوي (اختياري) */}
+          <div className="p-4 max-w-7xl mx-auto">{children}</div>
         </main>
-
-        {/* الشريط الجانبي (يمين) */}
-        <aside className="col-span-12 lg:col-span-3 order-1 lg:order-2">
-          <div className="rounded-2xl border bg-white shadow-sm p-4">
-            {/* بطاقة المستخدم */}
-            <div className="flex items-center gap-3 pb-4 border-b">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: teal }}>
-                <span className="font-bold">ع</span>
-              </div>
-              <div>
-                <div className="font-semibold">{user.name}</div>
-                <div className="text-xs text-gray-500">{user.roleLabel}</div>
-              </div>
-              {user.online && (
-                <span
-                  className="ms-auto text-xs px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: `${teal}22`, color: teal }}
-                >
-                  متصل
-                </span>
-              )}
-            </div>
-
-            {/* القوائم */}
-            <nav className="mt-4 space-y-5">
-              {sections.map((sec, idx) => (
-                <div key={idx}>
-                  {sec.title && (
-                    <div className="mb-2 px-2 text-sm font-semibold" style={{ color: gold }}>
-                      {sec.title}
-                    </div>
-                  )}
-                  <ul className="space-y-1">
-                    {sec.items.map((it) => (
-                      <li key={it.to}>
-                        <Link
-                          to={it.to}
-                          className={clsx(
-                            'flex items-center gap-2 rounded-xl px-3 py-2 text-[15px]',
-                            isActive(it.to) ? 'bg-[#b48c43]/10 font-semibold text-[#0f5f5c]' : 'hover:bg-gray-50'
-                          )}
-                        >
-                          <span
-                            className="text-base"
-                            style={{ color: isActive(it.to) ? '#b48c43' : '#455a64' }}
-                          >
-                            {it.icon}
-                          </span>
-                          <span>{it.label}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </nav>
-          </div>
-        </aside>
       </div>
     </div>
   )
 }
-
 
 
