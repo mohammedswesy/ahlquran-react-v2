@@ -1,37 +1,98 @@
-import AppLayout from '@/layouts/AppLayout'
-import { Link } from 'react-router-dom'
-import { FaClipboardList, FaUsers, FaCalendarCheck, FaChartBar } from 'react-icons/fa'
+import { useEffect, useMemo, useState } from "react"
+import AppLayout from "@/layouts/AppLayout"
+import Header from "@/components/ui/Header"
+import { Card, CardHeader, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Link } from "react-router-dom"
+import { DataTable } from "@/components/ui/datatable"
+import api from "@/services/api"
+import { toast } from "sonner"
+import { ClipboardList, CheckCircle2, Users } from "lucide-react"
 
-type Card = { label: string; color: 'gold' | 'teal'; to?: string; icon: JSX.Element; count?: number | string }
+type TaskRow = { id: number; title: string; status?: string; due_date?: string | null }
+
 export default function EmployeeDashboard() {
-    const cards: Card[] = [
-        { label: 'مهامي', icon: <FaClipboardList />, color: 'gold', to: '/employee/tasks', count: 5 },
-        { label: 'دليل الأشخاص', icon: <FaUsers />, color: 'teal', to: '/employee/people' },
-        { label: 'جداول العمل', icon: <FaCalendarCheck />, color: 'gold', to: '/employee/tasks' },
-        { label: 'التقارير', icon: <FaChartBar />, color: 'teal', to: '/employee/tasks' },
-    ]
-    const gold = 'bg-[#b48c43] text-white', teal = 'bg-[#0f5f5c] text-white'
+    const [loading, setLoading] = useState(true)
+    const [totals, setTotals] = useState<any>({ tasks: 0, done: 0, people: 0 })
+    const [recentTasks, setRecentTasks] = useState<TaskRow[]>([])
+
+    useEffect(() => {
+        (async () => {
+            setLoading(true)
+            try {
+                // غيّر المسار لو مختلف عندك
+                const { data } = await api.get("/employee/dashboard")
+                setTotals(data?.totals ?? { tasks: 0, done: 0, people: 0 })
+                const src: any[] = Array.isArray(data?.recentTasks) ? data.recentTasks : []
+                setRecentTasks(
+                    src.map(x => ({
+                        id: Number(x?.id ?? 0),
+                        title: String(x?.title ?? "").trim(),
+                        status: String(x?.status ?? "open"),
+                        due_date: x?.due_date ?? null,
+                    }))
+                )
+            } catch {
+                toast.info("سيتم ربط لوحة الموظف حال تجهيز الـ API")
+                setTotals({ tasks: 8, done: 5, people: 23 })
+                setRecentTasks([
+                    { id: 1, title: "تحضير تقرير أسبوعي", status: "open", due_date: "2025-11-05" },
+                    { id: 2, title: "أرشفة مستندات الطلبة", status: "done", due_date: "2025-10-28" },
+                ])
+            } finally {
+                setLoading(false)
+            }
+        })()
+    }, [])
+
+    const cols = useMemo(
+        () => [
+            { key: "title", label: "المهمة" },
+            { key: "status", label: "الحالة" },
+            { key: "due_date", label: "تاريخ الاستحقاق" },
+        ],
+        []
+    )
+
     return (
         <AppLayout>
-            <div dir="rtl" className="space-y-6">
-                <h1 className="text-2xl font-bold text-gray-800">لوحة الموظّف</h1>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {cards.map((c, i) => {
-                        const Card = (
-                            <div className={`relative overflow-hidden rounded-2xl p-5 shadow hover:shadow-lg transition ${c.color === 'gold' ? gold : teal}`}>
-                                <div className="absolute -left-4 -bottom-4 text-white/20 text-[80px]">{c.icon}</div>
-                                <div className="flex items-center gap-3">
-                                    <div className="text-3xl">{c.icon}</div>
-                                    <div className="flex flex-col">
-                                        <span className="text-lg font-semibold">{c.label}</span>
-                                        {c.count !== undefined && <span className="text-sm opacity-90">{c.count}</span>}
-                                    </div>
-                                </div>
-                            </div>
-                        )
-                        return c.to ? <Link key={i} to={c.to}>{Card}</Link> : <div key={i}>{Card}</div>
-                    })}
+            <Header />
+
+            <div className="space-y-6" dir="rtl">
+                <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-extrabold text-gray-800">لوحة الموظف</h1>
+                    <div className="flex gap-2">
+                        <Link to="/employee/tasks"><Button variant="outline">المهام</Button></Link>
+                        <Link to="/employee/people"><Button variant="outline">الأشخاص</Button></Link>
+                    </div>
                 </div>
+
+                {/* بطاقات سريعة */}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[
+                        { title: "إجمالي المهام", value: totals.tasks, Icon: ClipboardList },
+                        { title: "المهام المنجزة", value: totals.done, Icon: CheckCircle2 },
+                        { title: "الأشخاص", value: totals.people, Icon: Users },
+                    ].map((s, i) => (
+                        <Card key={i} className="overflow-hidden">
+                            <CardHeader className="flex items-center justify-between">
+                                <div className="text-sm text-gray-600">{s.title}</div>
+                                <s.Icon className="text-[var(--primary)]" size={18} />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-extrabold">{s.value}</div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+
+                {/* آخر المهام */}
+                <Card>
+                    <CardHeader className="font-bold">آخر المهام</CardHeader>
+                    <CardContent>
+                        <DataTable data={recentTasks} columns={cols as any} isLoading={loading} />
+                    </CardContent>
+                </Card>
             </div>
         </AppLayout>
     )

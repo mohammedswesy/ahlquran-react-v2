@@ -12,7 +12,7 @@ import StudentDashboard from '@/pages/student/Dashboard'
 import ParentDashboard from '@/pages/parent/Dashboard'
 import EmployeeDashboard from '@/pages/employee/Dashboard'
 
-// Admin: Lists (النماذج صارت داخل مودالات هذه القوائم)
+// Admin: Lists
 import InstitutesList from '@/pages/admin/InstitutesList'
 import EmployeesList from '@/pages/admin/EmployeesList'
 import CirclesList from '@/pages/admin/CirclesList'
@@ -49,7 +49,6 @@ export default function AppRoutes() {
         {/* Admin group */}
         <Route element={<RoleGuard allow={['super-admin', 'org-admin', 'institute-admin', 'sub-admin']} />}>
           <Route path="/admin" element={<AdminDashboard />} />
-
           <Route path="/admin/institutes" element={<InstitutesList />} />
           <Route path="/admin/employees" element={<EmployeesList />} />
           <Route path="/admin/circles" element={<CirclesList />} />
@@ -89,6 +88,7 @@ export default function AppRoutes() {
         </Route>
       </Route>
 
+      {/* Fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )

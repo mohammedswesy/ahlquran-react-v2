@@ -1,118 +1,223 @@
-import AppLayout from '@/layouts/AppLayout'
-import PageHeader from '@/components/ui/Header'
-import {Card} from '@/components/ui/card'
-import { useToast } from '@/store/toast'
-import { useMemo, useState } from 'react'
-import clsx from 'clsx'
+import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 
-type Status = 'present' | 'absent'
-type Student = { id: number; name: string }
+import AppLayout from "@/layouts/AppLayout"
+import Header from "@/components/ui/Header"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { DataTable } from "@/components/ui/datatable"
+import type { ColumnDef } from "@tanstack/react-table"
+import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+
+import { listMyCircles, type TeacherCircle } from "@/services/circles"
+import { listStudentsByCircleForAttendance, type MiniStudent } from "@/services/students"
+import { submitAttendance, type AttendanceStatus } from "@/services/attendances"
+
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command"
+import { ChevronsUpDown, Check } from "lucide-react"
+
+type Row = {
+    id: number
+    name: string
+    status: AttendanceStatus
+    notes?: string | null
+}
 
 export default function TakeAttendance() {
-    const { show } = useToast()
+    const [params, setParams] = useSearchParams()
+    const initialCircle = Number(params.get("circle_id") || 0)
 
-    // بيانات تجريبية — لاحقًا تستبدل بـ fetch من API
-    const students: Student[] = useMemo(
-        () => [{ id: 1, name: 'Khaled' }, { id: 2, name: 'Layan' }],
-        []
-    )
+    // Lookups
+    const [circles, setCircles] = useState<TeacherCircle[]>([])
+    const [openCircle, setOpenCircle] = useState(false)
 
-    // حالة كل طالب
-    const [marks, setMarks] = useState<Record<number, Status | undefined>>({})
+    // Form state
+    const [circleId, setCircleId] = useState<number | undefined>(initialCircle || undefined)
+    const [date, setDate] = useState<string>(() => {
+        const d = new Date()
+        const pad = (n: number) => String(n).padStart(2, "0")
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    })
 
-    const setStatus = (id: number, status: Status) =>
-        setMarks(prev => ({ ...prev, [id]: status }))
+    // Table state
+    const [rows, setRows] = useState<Row[]>([])
+    const [loading, setLoading] = useState(false)
+    const [saving, setSaving] = useState(false)
 
-    const allMarked = students.every(s => !!marks[s.id])
+    // load my circles
+    useEffect(() => {
+        (async () => {
+            try {
+                const list = await listMyCircles()
+                setCircles(list)
+            } catch {
+                /* ignore */
+            }
+        })()
+    }, [])
 
-    const handleSave = () => {
-        if (!allMarked) {
-            show('يرجى تحديد الحضور/الغياب لجميع الطلاب أولًا ⚠️', 'info')
-            return
+    // load students when circle changes
+    useEffect(() => {
+        (async () => {
+            if (!circleId) { setRows([]); return }
+            setLoading(true)
+            try {
+                const studs: MiniStudent[] = await listStudentsByCircleForAttendance(circleId)
+                setRows(studs.map(s => ({ id: s.id, name: s.name, status: "present", notes: null })))
+                // sync url
+                const p = new URLSearchParams(params)
+                p.set("circle_id", String(circleId))
+                setParams(p, { replace: true })
+            } catch (e: any) {
+                toast.error(e?.response?.data?.message || "تعذر تحميل طلاب الحلقة")
+            } finally {
+                setLoading(false)
+            }
+        })()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [circleId])
+
+    const labelOf = (s: AttendanceStatus) => {
+        switch (s) {
+            case "present": return "حاضر"
+            case "absent": return "غائب"
+            case "late": return "متأخر"
+            case "excused": return "مُعذّر"
+            default: return s
         }
-        // هنا ترسل الطلب للباك إند …
-        // await api.post('/attendance', { date, marks })
-
-        show('تم حفظ الحضور بنجاح ✅', 'success')
     }
 
-    const presentCount = Object.values(marks).filter(v => v === 'present').length
-    const absentCount = Object.values(marks).filter(v => v === 'absent').length
+    // Columns (تشمل عمود الملاحظات)
+    const columns = useMemo<ColumnDef<Row>[]>(() => [
+        { header: "#", cell: ({ row }) => row.index + 1 },
+        { accessorKey: "name", header: "اسم الطالب" },
+        {
+            id: "status",
+            header: "الحالة",
+            cell: ({ row }) => {
+                const s = row.original.status
+                return (
+                    <div className="flex gap-2">
+                        {(["present", "absent", "late", "excused"] as AttendanceStatus[]).map(v => (
+                            <Button
+                                key={v}
+                                size="sm"
+                                variant={s === v ? "primary" : "outline"}
+                                onClick={() => {
+                                    setRows(prev => prev.map(r => r.id === row.original.id ? { ...r, status: v } : r))
+                                }}
+                            >
+                                {labelOf(v)}
+                            </Button>
+                        ))}
+                    </div>
+                )
+            }
+        },
+        {
+            id: "notes",
+            header: "ملاحظات",
+            cell: ({ row }) => (
+                <Input
+                    placeholder="ملاحظة"
+                    value={row.original.notes ?? ""}
+                    onChange={(e) => {
+                        const v = e.target.value || null
+                        setRows(prev => prev.map(r => r.id === row.original.id ? { ...r, notes: v } : r))
+                    }}
+                    className="h-8"
+                />
+            )
+        },
+    ], [])
+
+    async function onSubmit() {
+        if (!circleId) { toast.warning("اختر الحلقة أولًا"); return }
+        if (!date) { toast.warning("اختر التاريخ"); return }
+        setSaving(true)
+        try {
+            await submitAttendance({
+                date,
+                circle_id: circleId,
+                records: rows.map(r => ({
+                    student_id: r.id,
+                    status: r.status,
+                    notes: r.notes ?? null
+                }))
+            })
+            toast.success("تم حفظ الحضور")
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || "فشل حفظ الحضور")
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const circleName = (id?: number) =>
+        circles.find(c => c.id === id)?.name || "اختر الحلقة…"
+
+    // quick actions
+    const setAll = (st: AttendanceStatus) =>
+        setRows(prev => prev.map(r => ({ ...r, status: st })))
 
     return (
         <AppLayout>
-            <div dir="rtl" className="space-y-4">
-                <PageHeader
-                    // title="تسجيل الحضور"
-                    // subtitle="حدد حالة كل طالب لليوم"
-                />
+            <Header />
+            <div className="p-4 space-y-4" dir="rtl">
+                <div className="flex flex-wrap items-end gap-3">
+                    {/* الحلقة */}
+                    <div className="min-w-[260px]">
+                        <label className="block text-sm text-gray-700 mb-1">الحلقة</label>
+                        <Popover open={openCircle} onOpenChange={setOpenCircle}>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className="w-full justify-between">
+                                    {circleName(circleId)}
+                                    <ChevronsUpDown className="opacity-50 size-4" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[300px] p-0" align="end">
+                                <Command>
+                                    <CommandInput placeholder="ابحث عن حلقة…" className="text-right" />
+                                    <CommandEmpty>لا توجد نتائج.</CommandEmpty>
+                                    <CommandGroup>
+                                        {circles.map(c => (
+                                            <CommandItem
+                                                key={c.id}
+                                                value={c.name}
+                                                onSelect={() => { setCircleId(c.id); setOpenCircle(false) }}
+                                            >
+                                                <Check className={cn("ml-2 size-4", c.id === circleId ? "opacity-100" : "opacity-0")} />
+                                                {c.name}
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
 
-                {/* شريط إحصائيات صغير */}
-                <div className="flex gap-3 text-sm">
-                    <span className="rounded-full bg-green-50 text-green-700 px-3 py-1 border border-green-200">
-                        حاضر: {presentCount}
-                    </span>
-                    <span className="rounded-full bg-red-50 text-red-700 px-3 py-1 border border-red-200">
-                        غائب: {absentCount}
-                    </span>
-                    <span className="rounded-full bg-gray-50 text-gray-700 px-3 py-1 border border-gray-200">
-                        الكل: {students.length}
-                    </span>
+                    {/* التاريخ */}
+                    <div>
+                        <label className="block text-sm text-gray-700 mb-1">التاريخ</label>
+                        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                    </div>
+
+                    {/* أزرار سريعة */}
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => setAll("present")}>الكل حاضر</Button>
+                        <Button variant="outline" onClick={() => setAll("absent")}>الكل غائب</Button>
+                    </div>
+
+                    <div className="ml-auto">
+                        <Button onClick={onSubmit} disabled={saving || !circleId}>
+                            {saving ? "يتم الحفظ…" : "حفظ الحضور"}
+                        </Button>
+                    </div>
                 </div>
 
-                <Card>
-                    <div className="p-4 space-y-2">
-                        {students.map((s) => {
-                            const status = marks[s.id]
-                            return (
-                                <div
-                                    key={s.id}
-                                    className="flex items-center justify-between border p-3 rounded"
-                                >
-                                    <div className="font-medium">{s.name}</div>
-                                    <div className="flex gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setStatus(s.id, 'present')}
-                                            className={clsx(
-                                                'px-3 py-1 rounded border',
-                                                status === 'present'
-                                                    ? 'bg-green-600 text-white border-green-600'
-                                                    : 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200'
-                                            )}
-                                        >
-                                            حاضر
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setStatus(s.id, 'absent')}
-                                            className={clsx(
-                                                'px-3 py-1 rounded border',
-                                                status === 'absent'
-                                                    ? 'bg-red-600 text-white border-red-600'
-                                                    : 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200'
-                                            )}
-                                        >
-                                            غائب
-                                        </button>
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
-
-                    <div className="p-4 border-t flex justify-end">
-                        <button
-                            onClick={handleSave}
-                            className={clsx(
-                                'rounded-lg px-4 py-2 text-white transition',
-                                allMarked ? 'bg-teal-600 hover:bg-teal-700' : 'bg-gray-400 cursor-not-allowed'
-                            )}
-                        >
-                            حفظ الحضور
-                        </button>
-                    </div>
-                </Card>
+                <DataTable data={rows} columns={columns} isLoading={loading} />
             </div>
         </AppLayout>
     )

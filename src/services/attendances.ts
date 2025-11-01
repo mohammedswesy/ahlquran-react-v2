@@ -83,3 +83,16 @@ export async function deleteAttendance(id: number) {
     const { data } = await api.delete(`/attendances/${id}`)
     return data
 }
+
+
+//////// attendances .techaers
+export async function submitAttendance(payload: {
+    date: string
+    circle_id: number
+    records: Array<{ student_id: number; status: AttendanceStatus; notes?: string | null }>
+}) {
+    const { data } = await api.post("/teacher/attendance", payload) // عدّل المسار لو مختلف
+    return data
+}
+
+

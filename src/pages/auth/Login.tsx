@@ -1,25 +1,38 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login } from '@/services/auth'
+import { useAuth } from '@/store/auth'   // ⬅️ مهم
+
+type Role =
+  | 'super-admin' | 'org-admin' | 'institute-admin' | 'sub-admin'
+  | 'teacher' | 'student' | 'parent' | 'employee'
 
 export default function Login() {
-  const [email, setEmail] = useState('test@example.com')
-  const [password, setPassword] = useState('password')
+  const [email, setEmail] = useState('admin@example.com')
+  const [password, setPassword] = useState('12345678')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const nav = useNavigate()
-  
+
+  // ⬇️ ناخذ setters من Zustand
+  const { setToken, setRole } = useAuth()
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
       setLoading(true); setError(null)
-      const { role } = await login({ email, password })
-      // وجّه حسب الدور لو بدك
+      const { token, role } = await login({ email, password })
+
+      // ⬇️ حدّث الـstore (مهم للحماية/الغارد)
+      setToken(token)
+      setRole((role as Role) || 'super-admin')
+
+      // ⬇️ توجيه حسب الدور
       if (role === 'teacher') nav('/teacher')
       else if (role === 'parent') nav('/parent')
       else if (role === 'employee') nav('/employee')
-      else nav('/admin') // افتراضي
+      else if (role === 'student') nav('/student')
+      else nav('/admin')
     } catch (e: any) {
       setError(e?.response?.data?.message || 'Login failed')
     } finally {
