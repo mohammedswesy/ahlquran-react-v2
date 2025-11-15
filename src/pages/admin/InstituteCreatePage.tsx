@@ -16,5 +16,5 @@ export default function InstituteCreatePage() {
         }
     }
 
-    return <InstituteForm onSubmit={handleCreate} />
+    return <InstituteForm mode="create" onSubmit={handleCreate} />
 }

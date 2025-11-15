@@ -1,4 +1,4 @@
-// src/components/ui/Sidebar.tsx  أو  src/layouts/Sidebar.tsx (حسب مكانه عندك)
+// src/components/ui/Sidebar.tsx أو src/layouts/Sidebar.tsx
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/store/auth" // ✅ هذا هو الهوك الصحيح
@@ -20,6 +20,10 @@ type NavItem = {
 const NAV: NavItem[] = [
   // ===== Admin =====
   { label: "لوحة القيادة", to: "/admin", icon: LayoutDashboard, roles: ["super-admin", "org-admin", "institute-admin", "sub-admin"] },
+
+  // ✅ رابط خاص بلوحة مدير المعهد
+  { label: "لوحة مدير المعهد", to: "/institute/dashboard", icon: LayoutDashboard, roles: ["institute-admin", "sub-admin"] },
+
   { label: "المعاهد", to: "/admin/institutes", icon: LibraryBig, roles: ["super-admin", "org-admin", "institute-admin", "sub-admin"] },
   { label: "الموظفون", to: "/admin/employees", icon: IdCard, roles: ["super-admin", "org-admin", "institute-admin", "sub-admin"] },
   { label: "الحلقات", to: "/admin/circles", icon: BookOpen, roles: ["super-admin", "org-admin", "institute-admin", "sub-admin"] },

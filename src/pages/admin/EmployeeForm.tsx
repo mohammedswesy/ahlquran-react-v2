@@ -17,14 +17,21 @@ import { cn } from "@/lib/utils"
 import type { Employee } from "@/services/employees"
 import { listInstitutesOptions } from "@/services/institutes"
 
+// ✅ عدّلنا الـ schema و ضفنا password
 const schema = z.object({
   name: z.string().min(2, "الاسم مطلوب"),
   email: z.string().email("بريد غير صالح").nullable().optional(),
   phone: z.string().nullable().optional(),
+  // مبدئياً بنخلي الـ role زي ما هو
   role: z.enum(["admin", "teacher", "staff"]).optional(),
   hire_date: z.string().nullable().optional(),
   institute_id: z.coerce.number().int().min(1, "اختر المعهد").optional(),
   status: z.coerce.number().int().optional().default(1),
+
+  // 👈 الحقل الجديد
+  password: z
+    .string()
+    .min(6, "كلمة المرور مطلوبة و يجب أن تكون 6 أحرف على الأقل"),
 })
 
 export type EmployeeFormValues = z.infer<typeof schema>
@@ -36,44 +43,84 @@ type Props = {
 }
 
 export default function EmployeeForm({ defaultValues, onSubmit, submitting }: Props) {
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } =
-    useForm<EmployeeFormValues>({
-      resolver: zodResolver(schema),
-      defaultValues: {
-        name: "",
-        email: null,
-        phone: null,
-        role: "staff",
-        hire_date: null,
-        institute_id: undefined,
-        status: 1,
-        ...defaultValues,
-      } as any
-    })
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<EmployeeFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      name: "",
+      email: null,
+      phone: null,
+      role: "staff",
+      hire_date: null,
+      institute_id: undefined,
+      status: 1,
+      password: "",           // 👈 مهم عشان الحقل يكون controlled
+      ...defaultValues,
+    } as any,
+  })
 
   const instituteId = watch("institute_id")
 
   const [instOptions, setInstOptions] = useState<Array<{ id: number; name: string }>>([])
   const [openInst, setOpenInst] = useState(false)
 
-  useEffect(() => { (async () => setInstOptions(await listInstitutesOptions()))() }, [])
-  useEffect(() => { if (defaultValues) reset(defaultValues as any) }, [defaultValues, reset])
+  useEffect(() => {
+    (async () => setInstOptions(await listInstitutesOptions()))()
+  }, [])
+
+  useEffect(() => {
+    if (defaultValues) reset(defaultValues as any)
+  }, [defaultValues, reset])
 
   const instName = useMemo(
-    () => instOptions.find(i => i.id === instituteId)?.name || "اختر المعهد…",
+    () => instOptions.find((i) => i.id === instituteId)?.name || "اختر المعهد…",
     [instOptions, instituteId]
   )
 
   return (
-    <form onSubmit={handleSubmit(async v => { await onSubmit(v) })} className="grid sm:grid-cols-2 gap-3" dir="rtl">
+    <form
+      onSubmit={handleSubmit(async (v) => { await onSubmit(v) })}
+      className="grid sm:grid-cols-2 gap-3"
+      dir="rtl"
+    >
+      {/* الاسم */}
       <div className="sm:col-span-2">
         <Input label="اسم الموظف" {...register("name")} />
-        {errors.name && <div className="text-red-600 text-xs mt-1">{errors.name.message}</div>}
+        {errors.name && (
+          <div className="text-red-600 text-xs mt-1">{errors.name.message}</div>
+        )}
       </div>
 
-      <div><Input label="البريد" type="email" {...register("email")} /></div>
-      <div><Input label="الهاتف" {...register("phone")} /></div>
+      {/* البريد + الهاتف */}
+      <div>
+        <Input label="البريد" type="email" {...register("email")} />
+        {errors.email && (
+          <div className="text-red-600 text-xs mt-1">{errors.email.message}</div>
+        )}
+      </div>
+      <div>
+        <Input label="الهاتف" {...register("phone")} />
+      </div>
 
+      {/* كلمة المرور الجديدة للمستخدم */}
+      <div className="sm:col-span-2">
+        <Input
+          label="كلمة المرور للمستخدم الجديد"
+          type="password"
+          {...register("password")}
+        />
+        {errors.password && (
+          <div className="text-red-600 text-xs mt-1">{errors.password.message}</div>
+        )}
+      </div>
+
+      {/* الدور */}
       <div>
         <label className="block text-sm text-gray-700 mb-1">الدور (Role)</label>
         <select
@@ -87,7 +134,10 @@ export default function EmployeeForm({ defaultValues, onSubmit, submitting }: Pr
         </select>
       </div>
 
-      <div><Input label="تاريخ التعيين" type="date" {...register("hire_date")} /></div>
+      {/* تاريخ التعيين */}
+      <div>
+        <Input label="تاريخ التعيين" type="date" {...register("hire_date")} />
+      </div>
 
       {/* المعهد */}
       <div className="sm:col-span-2 md:col-span-1">
@@ -108,9 +158,17 @@ export default function EmployeeForm({ defaultValues, onSubmit, submitting }: Pr
                   <CommandItem
                     key={i.id}
                     value={i.name}
-                    onSelect={() => { setValue("institute_id", i.id); setOpenInst(false) }}
+                    onSelect={() => {
+                      setValue("institute_id", i.id)
+                      setOpenInst(false)
+                    }}
                   >
-                    <Check className={cn("ml-2 size-4", i.id === instituteId ? "opacity-100" : "opacity-0")} />
+                    <Check
+                      className={cn(
+                        "ml-2 size-4",
+                        i.id === instituteId ? "opacity-100" : "opacity-0"
+                      )}
+                    />
                     {i.name}
                   </CommandItem>
                 ))}
@@ -118,14 +176,30 @@ export default function EmployeeForm({ defaultValues, onSubmit, submitting }: Pr
             </Command>
           </PopoverContent>
         </Popover>
-        {errors.institute_id && <div className="text-red-600 text-xs mt-1">{errors.institute_id.message}</div>}
+        {errors.institute_id && (
+          <div className="text-red-600 text-xs mt-1">
+            {errors.institute_id.message}
+          </div>
+        )}
       </div>
 
-      <div><Input label="الحالة (1=نشط, 0=موقوف)" type="number" {...register("status", { valueAsNumber: true })} /></div>
+      {/* الحالة */}
+      <div>
+        <Input
+          label="الحالة (1=نشط, 0=موقوف)"
+          type="number"
+          {...register("status", { valueAsNumber: true })}
+        />
+      </div>
 
+      {/* أزرار */}
       <div className="sm:col-span-2 mt-2 flex gap-2">
-        <Button disabled={!!submitting} type="submit">حفظ</Button>
-        <Button type="button" variant="outline" onClick={() => reset()}>إعادة ضبط</Button>
+        <Button disabled={!!submitting} type="submit">
+          حفظ
+        </Button>
+        <Button type="button" variant="outline" onClick={() => reset()}>
+          إعادة ضبط
+        </Button>
       </div>
     </form>
   )

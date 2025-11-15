@@ -196,17 +196,17 @@ export default function InstitutesList() {
         <ExportMenu rows={rows} filename="institutes" />
       </div>
       {loading ? (
-  <SkeletonTable rows={8} cols={4} />
-) : rows.length === 0 ? (
-  <EmptyState
-    title="لا توجد معاهد"
-    desc="أضف أول معهد للبدء."
-    actionLabel="إضافة معهد"
-    onAction={() => setOpenCreate(true)}
-  />
-) : (
-  <DataTable columns={columns} data={rows} isLoading={false} />
-)}
+        <SkeletonTable rows={8} cols={4} />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          title="لا توجد معاهد"
+          desc="أضف أول معهد للبدء."
+          actionLabel="إضافة معهد"
+          onAction={() => setOpenCreate(true)}
+        />
+      ) : (
+        <DataTable columns={columns} data={rows} isLoading={false} />
+      )}
       <DataTable columns={columns} data={rows} isLoading={loading} />
 
       {meta && (
@@ -220,8 +220,9 @@ export default function InstitutesList() {
       )}
 
       <Modal open={openCreate} onClose={() => setOpenCreate(false)} title="إضافة معهد" footer={null}>
-        <InstituteForm submitting={submitting} onSubmit={onCreate} />
+        <InstituteForm mode="create" submitting={submitting} onSubmit={onCreate} />
       </Modal>
+
 
       <Modal open={!!openEdit} onClose={() => setOpenEdit(null)} title="تعديل معهد" footer={null}>
         <InstituteForm submitting={submitting} defaultValues={openEdit ?? undefined} onSubmit={onEdit} />

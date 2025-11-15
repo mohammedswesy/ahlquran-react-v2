@@ -295,6 +295,9 @@
 
 
 // src/layouts/AppLayout.tsx
+
+
+// src/layouts/AppLayout.tsx
 import React from "react"
 import Sidebar from "./Sidebar"
 
@@ -302,16 +305,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       <div className="flex">
-        {/* ✅ Sidebar صار يقرأ الدور مباشرة من useAuth */}
+
+
         <Sidebar />
 
-        <main className="flex-1 min-w-0 h-screen overflow-y-auto">
-          {/* الهيدر العام أو شريط علوي (اختياري) */}
-          <div className="p-4 max-w-7xl mx-auto">{children}</div>
+
+        <main className="flex-1 min-w-0 h-screen overflow-y-auto p-4">
+          <div className="max-w-7xl mx-auto w-full">
+            {children}
+          </div>
         </main>
+
       </div>
     </div>
   )
 }
+
+
 
 

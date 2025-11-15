@@ -33,16 +33,30 @@ const schema = z.object({
   latitude: z.coerce.number().nullable().optional(),
   longitude: z.coerce.number().nullable().optional(),
   status: z.coerce.number().int().optional().default(1),
+
+  // 🟢 بيانات مدير المعهد (تستخدم فقط في الإنشاء)
+  admin_name: z.string().min(2, "اسم المدير قصير جدًا").or(z.literal("")).optional(),
+  admin_email: z.string().email("البريد غير صالح").or(z.literal("")).optional(),
+  admin_mobile: z.string().min(5, "رقم الجوال قصير").or(z.literal("")).optional(),
+  admin_password: z.string().min(8, "كلمة المرور يجب أن تكون 8 أحرف على الأقل").or(z.literal("")).optional(),
 })
+
 export type InstituteFormValues = z.infer<typeof schema>
 
 type Props = {
   defaultValues?: Partial<Institute>
   onSubmit: (values: InstituteFormValues) => Promise<void> | void
   submitting?: boolean
+  /** create: نعرض حقول مدير المعهد - edit: نخفيها */
+  mode?: "create" | "edit"
 }
 
-export default function InstituteForm({ defaultValues, onSubmit, submitting }: Props) {
+export default function InstituteForm({
+  defaultValues,
+  onSubmit,
+  submitting,
+  mode = "edit",
+}: Props) {
   const {
     register,
     handleSubmit,
@@ -60,6 +74,12 @@ export default function InstituteForm({ defaultValues, onSubmit, submitting }: P
       latitude: null,
       longitude: null,
       status: 1,
+
+      // 🟢 افتراضيات مدير المعهد
+      admin_name: "",
+      admin_email: "",
+      admin_mobile: "",
+      admin_password: "",
       ...defaultValues,
     } as any,
   })
@@ -105,7 +125,7 @@ export default function InstituteForm({ defaultValues, onSubmit, submitting }: P
       setValue("city_id", 0, { shouldDirty: true })
       return
     }
-    (async () => {
+    ; (async () => {
       setLoadingCities(true)
       try {
         const cityOpts = await listCities({ country_id: countryId })
@@ -133,6 +153,12 @@ export default function InstituteForm({ defaultValues, onSubmit, submitting }: P
         latitude: defaultValues.latitude ?? null,
         longitude: defaultValues.longitude ?? null,
         status: defaultValues.status ?? 1,
+
+        // في edit ما بنجيب بيانات مدير المعهد من الـ API، نخليها فاضية
+        admin_name: "",
+        admin_email: "",
+        admin_mobile: "",
+        admin_password: "",
       } as any
       reset(dv)
     }
@@ -195,7 +221,12 @@ export default function InstituteForm({ defaultValues, onSubmit, submitting }: P
                       setOpenCountry(false)
                     }}
                   >
-                    <Check className={cn("ml-2 size-4", Number(c.id) === Number(countryId) ? "opacity-100" : "opacity-0")} />
+                    <Check
+                      className={cn(
+                        "ml-2 size-4",
+                        Number(c.id) === Number(countryId) ? "opacity-100" : "opacity-0"
+                      )}
+                    />
                     {c.name}
                   </CommandItem>
                 ))}
@@ -203,7 +234,9 @@ export default function InstituteForm({ defaultValues, onSubmit, submitting }: P
             </Command>
           </PopoverContent>
         </Popover>
-        {errors.country_id && <div className="text-red-600 text-xs mt-1">{errors.country_id.message}</div>}
+        {errors.country_id && (
+          <div className="text-red-600 text-xs mt-1">{errors.country_id.message}</div>
+        )}
       </div>
 
       {/* المدينة */}
@@ -211,7 +244,12 @@ export default function InstituteForm({ defaultValues, onSubmit, submitting }: P
         <label className="block text-sm text-gray-700 mb-1">المدينة</label>
         <Popover open={openCity} onOpenChange={setOpenCity}>
           <PopoverTrigger asChild>
-            <Button variant="outline" role="combobox" className="w-full justify-between" disabled={!countryId}>
+            <Button
+              variant="outline"
+              role="combobox"
+              className="w-full justify-between"
+              disabled={!countryId}
+            >
               {cityName}
               <ChevronsUpDown className="opacity-50 size-4" />
             </Button>
@@ -230,7 +268,12 @@ export default function InstituteForm({ defaultValues, onSubmit, submitting }: P
                       setOpenCity(false)
                     }}
                   >
-                    <Check className={cn("ml-2 size-4", Number(c.id) === Number(cityId) ? "opacity-100" : "opacity-0")} />
+                    <Check
+                      className={cn(
+                        "ml-2 size-4",
+                        Number(c.id) === Number(cityId) ? "opacity-100" : "opacity-0"
+                      )}
+                    />
                     {c.name}
                   </CommandItem>
                 ))}
@@ -238,7 +281,9 @@ export default function InstituteForm({ defaultValues, onSubmit, submitting }: P
             </Command>
           </PopoverContent>
         </Popover>
-        {errors.city_id && <div className="text-red-600 text-xs mt-1">{errors.city_id.message}</div>}
+        {errors.city_id && (
+          <div className="text-red-600 text-xs mt-1">{errors.city_id.message}</div>
+        )}
       </div>
 
       {/* المنظمة (اختياري) */}
@@ -258,7 +303,10 @@ export default function InstituteForm({ defaultValues, onSubmit, submitting }: P
               <CommandGroup>
                 <CommandItem
                   value="بدون منظمة"
-                  onSelect={() => { setValue("organization_id", null, { shouldDirty: true }); setOpenOrg(false) }}
+                  onSelect={() => {
+                    setValue("organization_id", null, { shouldDirty: true })
+                    setOpenOrg(false)
+                  }}
                 >
                   <Check className={cn("ml-2 size-4", orgId == null ? "opacity-100" : "opacity-0")} />
                   بدون منظمة
@@ -273,7 +321,12 @@ export default function InstituteForm({ defaultValues, onSubmit, submitting }: P
                       setOpenOrg(false)
                     }}
                   >
-                    <Check className={cn("ml-2 size-4", Number(o.id) === Number(orgId) ? "opacity-100" : "opacity-0")} />
+                    <Check
+                      className={cn(
+                        "ml-2 size-4",
+                        Number(o.id) === Number(orgId) ? "opacity-100" : "opacity-0"
+                      )}
+                    />
                     {o.name}
                   </CommandItem>
                 ))}
@@ -291,12 +344,71 @@ export default function InstituteForm({ defaultValues, onSubmit, submitting }: P
         <Input label="Longitude (اختياري)" type="number" step="any" {...register("longitude")} />
       </div>
       <div>
-        <Input label="الحالة (1=نشط, 0=موقوف)" type="number" {...register("status", { valueAsNumber: true })} />
+        <Input
+          label="الحالة (1=نشط, 0=موقوف)"
+          type="number"
+          {...register("status", { valueAsNumber: true })}
+        />
       </div>
 
+      {/* 🟢 سكشن مدير المعهد – فقط في الإنشاء */}
+      {mode === "create" && (
+        <div className="sm:col-span-2 mt-4 p-3 border rounded-lg space-y-3 bg-slate-50">
+          <div className="font-semibold text-sm text-gray-800">بيانات مدير المعهد (اختياري)</div>
+          <p className="text-xs text-gray-500">
+            يمكنك ترك هذه الحقول فارغة وسيتم إنشاء المعهد فقط، بدون إنشاء حساب مدير.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <Input label="اسم المدير" {...register("admin_name")} />
+              {errors.admin_name && (
+                <div className="text-red-600 text-xs mt-1">
+                  {errors.admin_name.message as string}
+                </div>
+              )}
+            </div>
+            <div>
+              <Input label="البريد الإلكتروني للمدير" type="email" {...register("admin_email")} />
+              {errors.admin_email && (
+                <div className="text-red-600 text-xs mt-1">
+                  {errors.admin_email.message as string}
+                </div>
+              )}
+            </div>
+            <div>
+              <Input label="جوال المدير" {...register("admin_mobile")} />
+              {errors.admin_mobile && (
+                <div className="text-red-600 text-xs mt-1">
+                  {errors.admin_mobile.message as string}
+                </div>
+              )}
+            </div>
+            <div>
+              <Input
+                label="كلمة مرور المدير (اختياري)"
+                type="password"
+                {...register("admin_password")}
+              />
+              {errors.admin_password && (
+                <div className="text-red-600 text-xs mt-1">
+                  {errors.admin_password.message as string}
+                </div>
+              )}
+              <p className="text-[11px] text-gray-500 mt-1">
+                لو تركتها فارغة، السيرفر ممكن يولّد كلمة مرور عشوائية (حسب ما برمجناه في الباك إند).
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="sm:col-span-2 mt-2 flex gap-2">
-        <Button disabled={!!submitting} type="submit">حفظ</Button>
-        <Button type="button" variant="outline" onClick={() => reset()}>إعادة ضبط</Button>
+        <Button disabled={!!submitting} type="submit">
+          حفظ
+        </Button>
+        <Button type="button" variant="outline" onClick={() => reset()}>
+          إعادة ضبط
+        </Button>
       </div>
     </form>
   )
