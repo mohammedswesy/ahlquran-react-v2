@@ -38,6 +38,9 @@ export default function MyCircles() {
                         <Link to={`/teacher/attendance?circle_id=${c.id}`}>
                             <Button size="sm" variant="outline">تسجيل الحضور</Button>
                         </Link>
+                        <Link to={`/teacher/memorization?circle_id=${row.original.id}`}>
+                            <Button size="sm" variant="outline">تسجيل الحفظ</Button>
+                        </Link>
                         <Link to={`/teacher/assessments?circle_id=${c.id}`}>
                             <Button size="sm" variant="outline">التقييمات</Button>
                         </Link>
@@ -56,6 +59,7 @@ export default function MyCircles() {
                     <Link to="/teacher/attendance">
                         <Button variant="outline">تسجيل حضور سريع</Button>
                     </Link>
+
                 </div>
 
                 <DataTable data={rows} columns={columns} isLoading={loading} />

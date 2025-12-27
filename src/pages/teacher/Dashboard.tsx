@@ -97,6 +97,7 @@ export default function TeacherDashboard() {
                     <div className="flex gap-2">
                         <Link to="/teacher/circles"><Button variant="outline">حلقاتي</Button></Link>
                         <Link to="/teacher/attendance"><Button variant="outline">تسجيل الحضور</Button></Link>
+                        <Link to="/teacher/memorization"> <Button variant="outline">تسجيل الحفظ</Button></Link>
                         <Link to="/teacher/assessments"><Button variant="outline">التقييمات</Button></Link>
                     </div>
                 </div>
@@ -132,6 +133,13 @@ export default function TeacherDashboard() {
                         <div className="rounded-2xl p-5 shadow hover:shadow-lg bg-[#0f5f5c] text-white transition">
                             <div className="text-lg font-semibold">تسجيل الحضور</div>
                             <div className="text-sm opacity-90">تسجيل الحضور/الغياب اليومي</div>
+
+                        </div>
+                    </Link>
+                    <Link to="/teacher/memorization" className="block">
+                        <div className="rounded-2xl p-5 shadow hover:shadow-lg bg-[#146f3b] text-white transition">
+                            <div className="text-lg font-semibold">تسجيل الحفظ</div>
+                            <div className="text-sm opacity-90">إضافة وحفظ مقاطع الحفظ اليومية</div>
                         </div>
                     </Link>
                     <Link to="/teacher/assessments" className="block">

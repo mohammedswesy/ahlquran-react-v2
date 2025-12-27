@@ -13,7 +13,6 @@ import StudentDashboard from "@/pages/student/Dashboard"
 import ParentDashboard from "@/pages/parent/Dashboard"
 import EmployeeDashboard from "@/pages/employee/Dashboard"
 
-// ✅ صفحة مدير المعهد (خلي مسارها حسب ما أنشأتها)
 import InstituteAdminDashboardPage from "@/pages/institute/InstituteAdminDashboardPage"
 
 // Admin: Lists
@@ -29,6 +28,10 @@ import TeachersList from "@/pages/admin/TeachersList"
 import MyCircles from "@/pages/teacher/MyCircles"
 import TakeAttendance from "@/pages/teacher/TakeAttendance"
 import Assessments from "@/pages/teacher/Assessments"
+import Memorization from "@/pages/teacher/Memorization"
+
+
+
 
 // Student
 import MyProgress from "@/pages/student/MyProgress"
@@ -82,6 +85,8 @@ export default function AppRoutes() {
           <Route path="/teacher/circles" element={<MyCircles />} />
           <Route path="/teacher/attendance" element={<TakeAttendance />} />
           <Route path="/teacher/assessments" element={<Assessments />} />
+          <Route path="/teacher/memorization" element={<Memorization />} />
+
         </Route>
 
         {/* Student group */}
