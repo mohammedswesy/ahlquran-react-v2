@@ -3,6 +3,8 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { login } from "@/services/auth"
 import { useAuth, type Role } from "@/store/auth"
+import { useEffect } from "react"
+
 
 export default function Login() {
   const [email, setEmail] = useState("admin@ahlquran.test")
@@ -30,7 +32,7 @@ export default function Login() {
       else if (r === "employee") nav("/employee")
       else if (r === "student") nav("/student")
       else if (r === "institute-admin" || r === "sub-admin")
-        nav("/admin/institute-dashboard")
+        nav("/institute/dashboard")
       else nav("/admin")
     } catch (e: any) {
       setError(e?.response?.data?.message || "Login failed")
@@ -38,6 +40,19 @@ export default function Login() {
       setLoading(false)
     }
   }
+  const { token, role } = useAuth()
+
+  useEffect(() => {
+    if (token && role) {
+      if (role === "teacher") nav("/teacher")
+      else if (role === "parent") nav("/parent")
+      else if (role === "employee") nav("/employee")
+      else if (role === "student") nav("/student")
+      else if (role === "institute-admin" || role === "sub-admin") nav("/institute/dashboard")
+      else nav("/admin")
+    }
+  }, [token, role])
+
 
   return (
     <div className="min-h-screen grid place-items-center bg-gray-50">
@@ -71,5 +86,9 @@ export default function Login() {
         </button>
       </form>
     </div>
+
+
   )
+
 }
+

@@ -7,7 +7,9 @@ export type Employee = {
     id: number
     name: string
     email?: string | null
-    phone?: string | null
+    mobile?: string | null
+    phone?: string | null 
+    job_title?: string | null
     role?: EmployeeRole | null
     hire_date?: string | null
     institute_id?: number | null
@@ -15,6 +17,7 @@ export type Employee = {
     institute?: { id: number; name: string }
     [k: string]: any
 }
+
 
 export type ListParams = {
     page?: number

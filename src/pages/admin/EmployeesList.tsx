@@ -7,16 +7,16 @@ import { toast } from "sonner"
 import type { ColumnDef } from "@tanstack/react-table"
 
 import {
-  listEmployees, createEmployee, updateEmployee, deleteEmployee, type Employee,
+  listEmployees,
+  createEmployee,
+  updateEmployee,
+  deleteEmployee,
+  type Employee,
 } from "@/services/employees"
 
 import { listInstitutesOptions } from "@/services/institutes"
-import {
-  Popover, PopoverTrigger, PopoverContent,
-} from "@/components/ui/popover"
-import {
-  Command, CommandInput, CommandEmpty, CommandGroup, CommandItem,
-} from "@/components/ui/command"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command"
 import { ChevronsUpDown, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -50,19 +50,55 @@ export default function EmployeesList() {
   const [instOpen, setInstOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
 
-  useEffect(() => { (async () => setInstOptions(await listInstitutesOptions()))() }, [])
+  useEffect(() => {
+    ; (async () => setInstOptions(await listInstitutesOptions()))()
+  }, [])
 
+  // ✅ أعمدة صحيحة حسب الـ API response (user.name / user.email / institute.name)
   const columns = useMemo<ColumnDef<Employee>[]>(() => [
     { header: "#", cell: ({ row }) => row.index + 1 },
-    { accessorKey: "name", header: "الاسم" },
-    { accessorKey: "email", header: "البريد", cell: ({ getValue }) => getValue() || "—" },
-    { accessorKey: "phone", header: "الهاتف", cell: ({ getValue }) => getValue() || "—" },
+
+    {
+      id: "name",
+      header: "الاسم",
+      cell: ({ row }) => row.original.user?.name || "—",
+    },
+
+    {
+      id: "email",
+      header: "البريد",
+      cell: ({ row }) => row.original.user?.email || "—",
+    },
+
+    {
+      accessorKey: "job_title",
+      header: "المسمى الوظيفي",
+      cell: ({ getValue }) => (getValue() as any) || "—",
+    },
+
+    // إذا الباك ما برجع phone/moblie في list، خليها —
+    {
+      id: "phone",
+      header: "الهاتف",
+      cell: ({ row }) => row.original.mobile || row.original.phone || "—",
+    },
+
+    // الـ role مش ظاهر في response الحالي، فخليه “—” أو اقرأ من role_name لو موجود
     {
       id: "role",
       header: "الدور",
-      cell: ({ row }) => ROLE_LABEL[row.original.role || ""] || row.original.role || "—",
+      cell: ({ row }) => {
+        const r = (row.original as any).role || (row.original as any).role_name
+        return ROLE_LABEL[r || ""] || r || "—"
+      },
     },
-    { id: "institute", header: "المعهد", cell: ({ row }) => row.original.institute?.name || "—" },
+
+    {
+      id: "institute",
+      header: "المعهد",
+      cell: ({ row }) => row.original.institute?.name || "—",
+    },
+
     {
       id: "actions",
       header: "إجراءات",
@@ -70,8 +106,12 @@ export default function EmployeesList() {
         const r = row.original
         return (
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setOpenEdit(r)}>تعديل</Button>
-            <Button variant="destructive" size="sm" onClick={() => onDelete(r.id)}>حذف</Button>
+            <Button variant="outline" size="sm" onClick={() => setOpenEdit(r)}>
+              تعديل
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => onDelete(r.id)}>
+              حذف
+            </Button>
           </div>
         )
       },
@@ -82,17 +122,21 @@ export default function EmployeesList() {
     setLoading(true)
     try {
       const res = await listEmployees({
-        page, per_page: perPage, search,
+        page,
+        per_page: perPage,
+        search,
         ...(filterRole ? { role: filterRole } : {}),
         ...(filterInstituteId ? { institute_id: filterInstituteId } : {}),
       } as any)
 
+      // ✅ استخراج صحيح: res.data (array) + res.meta
       const next =
-        (res && Array.isArray((res as any).data) && (res as any).data) ||
-        (Array.isArray(res) ? res : [])
+        Array.isArray((res as any)?.data) ? (res as any).data :
+          Array.isArray((res as any)?.data?.data) ? (res as any).data.data :
+            Array.isArray(res) ? res : []
 
       setRows(next as Employee[])
-      setMeta((res as any)?.meta ?? null)
+      setMeta((res as any)?.meta ?? (res as any)?.data?.meta ?? null)
     } catch (e: any) {
       toast.error(e?.response?.data?.message || "تعذر تحميل الموظفين")
     } finally {
@@ -110,7 +154,8 @@ export default function EmployeesList() {
     setSubmitting(true)
     try {
       const created = await createEmployee(v)
-      setRows(prev => [created, ...prev])
+      // ✅ created ممكن يرجع object واحد، فبنضيفه فوق
+      setRows((prev) => [created as any, ...prev])
       setOpenCreate(false)
       toast.success("تمت الإضافة بنجاح")
     } catch (e: any) {
@@ -125,7 +170,7 @@ export default function EmployeesList() {
     setSubmitting(true)
     try {
       const updated = await updateEmployee(openEdit.id, v)
-      setRows(prev => prev.map(r => r.id === openEdit.id ? updated : r))
+      setRows((prev) => prev.map((r) => (r.id === openEdit.id ? (updated as any) : r)))
       setOpenEdit(null)
       toast.success("تم التعديل بنجاح")
     } catch (e: any) {
@@ -139,16 +184,14 @@ export default function EmployeesList() {
     if (!confirm("متأكد من حذف هذا الموظف؟")) return
     try {
       await deleteEmployee(id)
-      setRows(prev => prev.filter(r => r.id !== id))
+      setRows((prev) => prev.filter((r) => r.id !== id))
       toast.success("تم الحذف")
     } catch (e: any) {
       toast.error(e?.response?.data?.message || "فشل الحذف")
     }
   }
 
-  const instName = (id?: number) =>
-    instOptions.find(i => i.id === id)?.name || "اختر المعهد…"
-
+  const instName = (id?: number) => instOptions.find((i) => i.id === id)?.name || "اختر المعهد…"
   const roleLabel = (r?: string) => ROLE_LABEL[r || ""] || "اختر الدور…"
 
   return (
@@ -158,7 +201,10 @@ export default function EmployeesList() {
           label="بحث"
           placeholder="ابحث باسم الموظف…"
           value={search}
-          onChange={(e) => { setPage(1); setSearch(e.target.value) }}
+          onChange={(e) => {
+            setPage(1)
+            setSearch(e.target.value)
+          }}
           className="w-64"
         />
 
@@ -186,7 +232,11 @@ export default function EmployeesList() {
                     <CommandItem
                       key={String(r.key)}
                       value={r.label}
-                      onSelect={() => { setFilterRole(r.key as any); setRoleOpen(false); setPage(1) }}
+                      onSelect={() => {
+                        setFilterRole(r.key as any)
+                        setRoleOpen(false)
+                        setPage(1)
+                      }}
                     >
                       <Check className={cn("ml-2 size-4", filterRole === r.key ? "opacity-100" : "opacity-0")} />
                       {r.label}
@@ -216,16 +266,25 @@ export default function EmployeesList() {
                   <CommandItem
                     key={0}
                     value="الكل"
-                    onSelect={() => { setFilterInstituteId(undefined); setInstOpen(false); setPage(1) }}
+                    onSelect={() => {
+                      setFilterInstituteId(undefined)
+                      setInstOpen(false)
+                      setPage(1)
+                    }}
                   >
                     <Check className={cn("ml-2 size-4", !filterInstituteId ? "opacity-100" : "opacity-0")} />
                     الكل
                   </CommandItem>
+
                   {instOptions.map((i) => (
                     <CommandItem
                       key={i.id}
                       value={i.name}
-                      onSelect={() => { setFilterInstituteId(i.id); setInstOpen(false); setPage(1) }}
+                      onSelect={() => {
+                        setFilterInstituteId(i.id)
+                        setInstOpen(false)
+                        setPage(1)
+                      }}
                     >
                       <Check className={cn("ml-2 size-4", i.id === filterInstituteId ? "opacity-100" : "opacity-0")} />
                       {i.name}
@@ -237,7 +296,9 @@ export default function EmployeesList() {
           </Popover>
         </div>
 
-        <Button onClick={load} variant="outline">تحديث</Button>
+        <Button onClick={load} variant="outline">
+          تحديث
+        </Button>
         <Button onClick={() => setOpenCreate(true)}>إضافة موظف</Button>
       </div>
 
@@ -245,12 +306,14 @@ export default function EmployeesList() {
 
       {meta && (
         <div className="flex items-center justify-between text-sm text-gray-600">
-          <div>صفحة {meta.current_page} من {meta.last_page}</div>
+          <div>
+            صفحة {meta.current_page} من {meta.last_page}
+          </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
               السابق
             </Button>
-            <Button variant="outline" size="sm" disabled={meta && page >= meta.last_page} onClick={() => setPage(p => p + 1)}>
+            <Button variant="outline" size="sm" disabled={meta && page >= meta.last_page} onClick={() => setPage((p) => p + 1)}>
               التالي
             </Button>
           </div>

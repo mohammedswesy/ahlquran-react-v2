@@ -5,33 +5,38 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
-import {
-  Popover, PopoverTrigger, PopoverContent,
-} from "@/components/ui/popover"
-import {
-  Command, CommandInput, CommandEmpty, CommandGroup, CommandItem,
-} from "@/components/ui/command"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command"
 import { ChevronsUpDown, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import type { Employee } from "@/services/employees"
 import { listInstitutesOptions } from "@/services/institutes"
 
-// ✅ عدّلنا الـ schema و ضفنا password
+// ✅ schema: job_title مطلوب + يمنع الإيميل
+// ✅ password: اختياري (يسمح فاضي) -> للتعديل
 const schema = z.object({
   name: z.string().min(2, "الاسم مطلوب"),
   email: z.string().email("بريد غير صالح").nullable().optional(),
   phone: z.string().nullable().optional(),
-  // مبدئياً بنخلي الـ role زي ما هو
+
+  job_title: z
+    .string()
+    .min(2, "المسمى الوظيفي مطلوب")
+    .refine((v) => !v.includes("@"), "المسمى الوظيفي لا يجب أن يكون بريد إلكتروني"),
+
   role: z.enum(["admin", "teacher", "staff"]).optional(),
+
   hire_date: z.string().nullable().optional(),
   institute_id: z.coerce.number().int().min(1, "اختر المعهد").optional(),
   status: z.coerce.number().int().optional().default(1),
 
-  // 👈 الحقل الجديد
+  // ✅ password اختياري + يسمح فاضي
   password: z
     .string()
-    .min(6, "كلمة المرور مطلوبة و يجب أن تكون 6 أحرف على الأقل"),
+    .min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل")
+    .optional()
+    .or(z.literal("")),
 })
 
 export type EmployeeFormValues = z.infer<typeof schema>
@@ -56,11 +61,12 @@ export default function EmployeeForm({ defaultValues, onSubmit, submitting }: Pr
       name: "",
       email: null,
       phone: null,
+      job_title: "",
       role: "staff",
       hire_date: null,
       institute_id: undefined,
       status: 1,
-      password: "",           // 👈 مهم عشان الحقل يكون controlled
+      password: "",
       ...defaultValues,
     } as any,
   })
@@ -71,7 +77,7 @@ export default function EmployeeForm({ defaultValues, onSubmit, submitting }: Pr
   const [openInst, setOpenInst] = useState(false)
 
   useEffect(() => {
-    (async () => setInstOptions(await listInstitutesOptions()))()
+    ; (async () => setInstOptions(await listInstitutesOptions()))()
   }, [])
 
   useEffect(() => {
@@ -85,39 +91,50 @@ export default function EmployeeForm({ defaultValues, onSubmit, submitting }: Pr
 
   return (
     <form
-      onSubmit={handleSubmit(async (v) => { await onSubmit(v) })}
+      onSubmit={handleSubmit(async (v) => {
+        // ✅ لو password فاضية، نحذفها من payload (مفيد جدًا في edit)
+        const payload: any = { ...v }
+        if (!payload.password) delete payload.password
+
+        await onSubmit(payload)
+      })}
       className="grid sm:grid-cols-2 gap-3"
       dir="rtl"
     >
       {/* الاسم */}
       <div className="sm:col-span-2">
         <Input label="اسم الموظف" {...register("name")} />
-        {errors.name && (
-          <div className="text-red-600 text-xs mt-1">{errors.name.message}</div>
-        )}
+        {errors.name && <div className="text-red-600 text-xs mt-1">{errors.name.message}</div>}
+      </div>
+
+      {/* المسمى الوظيفي */}
+      <div className="sm:col-span-2">
+        <Input
+          label="المسمى الوظيفي"
+          placeholder="مثال: مشرف / إداري / معلّم"
+          {...register("job_title")}
+        />
+        {errors.job_title && <div className="text-red-600 text-xs mt-1">{errors.job_title.message}</div>}
       </div>
 
       {/* البريد + الهاتف */}
       <div>
         <Input label="البريد" type="email" {...register("email")} />
-        {errors.email && (
-          <div className="text-red-600 text-xs mt-1">{errors.email.message}</div>
-        )}
+        {errors.email && <div className="text-red-600 text-xs mt-1">{errors.email.message}</div>}
       </div>
+
       <div>
         <Input label="الهاتف" {...register("phone")} />
       </div>
 
-      {/* كلمة المرور الجديدة للمستخدم */}
+      {/* كلمة المرور */}
       <div className="sm:col-span-2">
         <Input
-          label="كلمة المرور للمستخدم الجديد"
+          label="كلمة المرور للمستخدم (اتركها فارغة إذا لا تريد تغييرها)"
           type="password"
           {...register("password")}
         />
-        {errors.password && (
-          <div className="text-red-600 text-xs mt-1">{errors.password.message}</div>
-        )}
+        {errors.password && <div className="text-red-600 text-xs mt-1">{errors.password.message}</div>}
       </div>
 
       {/* الدور */}
@@ -125,7 +142,7 @@ export default function EmployeeForm({ defaultValues, onSubmit, submitting }: Pr
         <label className="block text-sm text-gray-700 mb-1">الدور (Role)</label>
         <select
           className="w-full rounded-md border px-3 py-2 text-right"
-          defaultValue={defaultValues?.role || "staff"}
+          defaultValue={(defaultValues as any)?.role || "staff"}
           onChange={(e) => setValue("role", e.target.value as any)}
         >
           <option value="admin">مشرف</option>
@@ -163,12 +180,7 @@ export default function EmployeeForm({ defaultValues, onSubmit, submitting }: Pr
                       setOpenInst(false)
                     }}
                   >
-                    <Check
-                      className={cn(
-                        "ml-2 size-4",
-                        i.id === instituteId ? "opacity-100" : "opacity-0"
-                      )}
-                    />
+                    <Check className={cn("ml-2 size-4", i.id === instituteId ? "opacity-100" : "opacity-0")} />
                     {i.name}
                   </CommandItem>
                 ))}
@@ -176,11 +188,8 @@ export default function EmployeeForm({ defaultValues, onSubmit, submitting }: Pr
             </Command>
           </PopoverContent>
         </Popover>
-        {errors.institute_id && (
-          <div className="text-red-600 text-xs mt-1">
-            {errors.institute_id.message}
-          </div>
-        )}
+
+        {errors.institute_id && <div className="text-red-600 text-xs mt-1">{errors.institute_id.message}</div>}
       </div>
 
       {/* الحالة */}
