@@ -7,7 +7,7 @@ import { Link } from "react-router-dom"
 import { DataTable } from "@/components/ui/datatable"
 import api from "@/services/api"
 import { toast } from "sonner"
-import { ClipboardList, CheckCircle2, Users } from "lucide-react"
+import { PiClipboardTextBold, PiCheckCircleBold, PiUsersThreeBold } from "react-icons/pi"
 
 type TaskRow = { id: number; title: string; status?: string; due_date?: string | null }
 
@@ -70,9 +70,9 @@ export default function EmployeeDashboard() {
                 {/* بطاقات سريعة */}
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[
-                        { title: "إجمالي المهام", value: totals.tasks, Icon: ClipboardList },
-                        { title: "المهام المنجزة", value: totals.done, Icon: CheckCircle2 },
-                        { title: "الأشخاص", value: totals.people, Icon: Users },
+                        { title: "إجمالي المهام", value: totals.tasks, Icon: PiClipboardTextBold },
+                        { title: "المهام المنجزة", value: totals.done, Icon: PiCheckCircleBold },
+                        { title: "الأشخاص", value: totals.people, Icon: PiUsersThreeBold },
                     ].map((s, i) => (
                         <Card key={i} className="overflow-hidden">
                             <CardHeader className="flex items-center justify-between">

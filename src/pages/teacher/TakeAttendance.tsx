@@ -48,30 +48,39 @@ export default function TakeAttendance() {
 
     // load my circles
     useEffect(() => {
-        (async () => {
+        ; (async () => {
             try {
                 const list = await listMyCircles()
                 setCircles(list)
-            } catch {
-                /* ignore */
+                // لو ما في circleId بالـ URL اختار أول حلقة تلقائياً
+                if (!circleId && list.length) setCircleId(list[0].id)
+            } catch (e: any) {
+                toast.error(e?.response?.data?.message || "تعذر تحميل حلقات المعلّم")
             }
         })()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     // load students when circle changes
     useEffect(() => {
-        (async () => {
-            if (!circleId) { setRows([]); return }
+        ; (async () => {
+            if (!circleId) {
+                setRows([])
+                return
+            }
             setLoading(true)
             try {
                 const studs: MiniStudent[] = await listStudentsByCircleForAttendance(circleId)
-                setRows(studs.map(s => ({ id: s.id, name: s.name, status: "present", notes: null })))
+
+                setRows(studs.map((s) => ({ id: s.id, name: s.name, status: "present", notes: null })))
+
                 // sync url
                 const p = new URLSearchParams(params)
                 p.set("circle_id", String(circleId))
                 setParams(p, { replace: true })
             } catch (e: any) {
                 toast.error(e?.response?.data?.message || "تعذر تحميل طلاب الحلقة")
+                setRows([])
             } finally {
                 setLoading(false)
             }
@@ -81,32 +90,44 @@ export default function TakeAttendance() {
 
     const labelOf = (s: AttendanceStatus) => {
         switch (s) {
-            case "present": return "حاضر"
-            case "absent": return "غائب"
-            case "late": return "متأخر"
-            case "excused": return "مُعذّر"
-            default: return s
+            case "present":
+                return "حاضر"
+            case "absent":
+                return "غائب"
+            case "late":
+                return "متأخر"
+            case "excused":
+                return "مُعذّر"
+            default:
+                return String(s)
         }
     }
 
-    // Columns (تشمل عمود الملاحظات)
+    // ✅ مهم: لازم كل ColumnDef يكون عنده id لو header مش string
     const columns = useMemo<ColumnDef<Row>[]>(() => [
-        { header: "#", cell: ({ row }) => row.index + 1 },
-        { accessorKey: "name", header: "اسم الطالب" },
+        {
+            id: "idx",
+            header: "#",
+            cell: ({ row }) => row.index + 1,
+        },
+        {
+            accessorKey: "name",
+            header: "اسم الطالب",
+        },
         {
             id: "status",
             header: "الحالة",
             cell: ({ row }) => {
                 const s = row.original.status
                 return (
-                    <div className="flex gap-2">
-                        {(["present", "absent", "late", "excused"] as AttendanceStatus[]).map(v => (
+                    <div className="flex flex-wrap gap-2">
+                        {(["present", "absent", "late", "excused"] as AttendanceStatus[]).map((v) => (
                             <Button
                                 key={v}
                                 size="sm"
                                 variant={s === v ? "primary" : "outline"}
                                 onClick={() => {
-                                    setRows(prev => prev.map(r => r.id === row.original.id ? { ...r, status: v } : r))
+                                    setRows((prev) => prev.map((r) => (r.id === row.original.id ? { ...r, status: v } : r)))
                                 }}
                             >
                                 {labelOf(v)}
@@ -114,7 +135,7 @@ export default function TakeAttendance() {
                         ))}
                     </div>
                 )
-            }
+            },
         },
         {
             id: "notes",
@@ -125,29 +146,42 @@ export default function TakeAttendance() {
                     value={row.original.notes ?? ""}
                     onChange={(e) => {
                         const v = e.target.value || null
-                        setRows(prev => prev.map(r => r.id === row.original.id ? { ...r, notes: v } : r))
+                        setRows((prev) => prev.map((r) => (r.id === row.original.id ? { ...r, notes: v } : r)))
                     }}
                     className="h-8"
                 />
-            )
+            ),
         },
     ], [])
 
     async function onSubmit() {
-        if (!circleId) { toast.warning("اختر الحلقة أولًا"); return }
-        if (!date) { toast.warning("اختر التاريخ"); return }
+        if (!circleId) {
+            toast.warning("اختر الحلقة أولًا")
+            return
+        }
+        if (!date) {
+            toast.warning("اختر التاريخ")
+            return
+        }
+        if (!rows.length) {
+            toast.warning("لا يوجد طلاب")
+            return
+        }
+
         setSaving(true)
         try {
+            // ✅ هذا يطابق باكك: POST /api/attendance
             await submitAttendance({
                 date,
                 circle_id: circleId,
-                records: rows.map(r => ({
+                records: rows.map((r) => ({
                     student_id: r.id,
                     status: r.status,
-                    notes: r.notes ?? null
-                }))
+                    notes: r.notes ?? null,
+                })),
             })
-            toast.success("تم حفظ الحضور")
+
+            toast.success("تم حفظ الحضور ✅")
         } catch (e: any) {
             toast.error(e?.response?.data?.message || "فشل حفظ الحضور")
         } finally {
@@ -155,12 +189,9 @@ export default function TakeAttendance() {
         }
     }
 
-    const circleName = (id?: number) =>
-        circles.find(c => c.id === id)?.name || "اختر الحلقة…"
+    const circleName = (id?: number) => circles.find((c) => c.id === id)?.name || "اختر الحلقة…"
 
-    // quick actions
-    const setAll = (st: AttendanceStatus) =>
-        setRows(prev => prev.map(r => ({ ...r, status: st })))
+    const setAll = (st: AttendanceStatus) => setRows((prev) => prev.map((r) => ({ ...r, status: st })))
 
     return (
         <AppLayout>
@@ -182,11 +213,14 @@ export default function TakeAttendance() {
                                     <CommandInput placeholder="ابحث عن حلقة…" className="text-right" />
                                     <CommandEmpty>لا توجد نتائج.</CommandEmpty>
                                     <CommandGroup>
-                                        {circles.map(c => (
+                                        {circles.map((c) => (
                                             <CommandItem
                                                 key={c.id}
                                                 value={c.name}
-                                                onSelect={() => { setCircleId(c.id); setOpenCircle(false) }}
+                                                onSelect={() => {
+                                                    setCircleId(c.id)
+                                                    setOpenCircle(false)
+                                                }}
                                             >
                                                 <Check className={cn("ml-2 size-4", c.id === circleId ? "opacity-100" : "opacity-0")} />
                                                 {c.name}
@@ -217,7 +251,7 @@ export default function TakeAttendance() {
                     </div>
                 </div>
 
-                <DataTable data={rows} columns={columns} isLoading={loading} />
+                <DataTable data={rows} columns={columns} isLoading={loading} searchKey="name" />
             </div>
         </AppLayout>
     )

@@ -2,32 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ألوان وهوية */
 :root {
-    --primary: #1b5e20;
-    /* أخضر قرآني */
-    --accent: #d4af37;
-    /* ذهبي */
-    --bg: #f9fafb;
-    --text: #1f2937;
+  /* Brand */
+  --brand: #003d35;
+  --brand2: #dccba0;
+
+  /* Backgrounds */
+  --bg: #fefefe;
+  --surface: #ffffff;
+  --surface2: #f7f7f7;
+
+  /* Borders */
+  --border: rgba(0, 61, 53, 0.15);
+
+  /* Text */
+  --text: #0f172a;
+  --muted: #64748b;
+  --icon: #334155;
+
+  /* Focus / ring */
+  --ring: rgba(0, 61, 53, 0.35);
+
+  /* Shadows */
+  --shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+  --shadow2: 0 8px 24px rgba(0, 0, 0, 0.06);
+
+  --radius: 18px;
 }
 
 html,
 body,
 #root {
-    height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Cairo", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  height: 100%;
+  background: #fefefe;
+  color: var(--text);
+  font-family: "Cairo", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu;
 }
 
-/* مساعدة صغيرة للـ scrollbar (اختياري) */
+/* Scrollbar */
 *::-webkit-scrollbar {
-    height: 10px;
-    width: 10px;
+  width: 10px;
 }
 
 *::-webkit-scrollbar-thumb {
-    background: #e5e7eb;
-    border-radius: 999px;
+  background: rgba(0, 61, 53, 0.25);
+  border-radius: 999px;
 }

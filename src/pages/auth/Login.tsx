@@ -1,10 +1,9 @@
-// src/pages/auth/Login.tsx
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { login } from "@/services/auth"
 import { useAuth, type Role } from "@/store/auth"
-import { useEffect } from "react"
-
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 
 export default function Login() {
   const [email, setEmail] = useState("admin@ahlquran.test")
@@ -12,8 +11,18 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const nav = useNavigate()
+  const { setToken, setRole, token, role } = useAuth()
 
-  const { setToken, setRole } = useAuth()
+  useEffect(() => {
+    if (token && role) {
+      if (role === "teacher") nav("/teacher")
+      else if (role === "parent") nav("/parent")
+      else if (role === "employee") nav("/employee")
+      else if (role === "student") nav("/student")
+      else if (role === "institute-admin" || role === "sub-admin") nav("/institute/dashboard")
+      else nav("/admin")
+    }
+  }, [token, role])
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -31,64 +40,62 @@ export default function Login() {
       else if (r === "parent") nav("/parent")
       else if (r === "employee") nav("/employee")
       else if (r === "student") nav("/student")
-      else if (r === "institute-admin" || r === "sub-admin")
-        nav("/institute/dashboard")
+      else if (r === "institute-admin" || r === "sub-admin") nav("/institute/dashboard")
       else nav("/admin")
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Login failed")
+      setError(e?.response?.data?.message || "فشل تسجيل الدخول")
     } finally {
       setLoading(false)
     }
   }
-  const { token, role } = useAuth()
-
-  useEffect(() => {
-    if (token && role) {
-      if (role === "teacher") nav("/teacher")
-      else if (role === "parent") nav("/parent")
-      else if (role === "employee") nav("/employee")
-      else if (role === "student") nav("/student")
-      else if (role === "institute-admin" || role === "sub-admin") nav("/institute/dashboard")
-      else nav("/admin")
-    }
-  }, [token, role])
-
 
   return (
-    <div className="min-h-screen grid place-items-center bg-gray-50">
-      <form
-        onSubmit={onSubmit}
-        className="bg-white p-6 rounded-xl shadow w-full max-w-sm grid gap-3"
+    <div className="min-h-screen grid place-items-center px-4">
+      <div
+        className="w-full max-w-md rounded-[28px] border border-[var(--border)] p-6"
+        style={{ background: "rgba(255,255,255,.06)", backdropFilter: "blur(14px)", boxShadow: "var(--shadow)" }}
       >
-        <h1 className="text-xl font-bold">Sign in</h1>
-        {error && <div className="text-red-600">{error}</div>}
+        <div className="mb-6 text-center">
+          <div className="text-2xl font-extrabold tracking-wide">
+            <span className="opacity-90">Nebula</span>{" "}
+            <span className="bg-[linear-gradient(135deg,var(--brand),var(--brand2))] bg-clip-text text-transparent">
+              Quran
+            </span>
+          </div>
+          <div className="text-xs text-[var(--muted)] mt-1">تسجيل دخول آمن للوصول للوحة التحكم</div>
+        </div>
 
-        <input
-          className="border rounded px-3 py-2"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-        />
+        <form onSubmit={onSubmit} className="grid gap-3" dir="rtl">
+          {error && (
+            <div className="text-sm rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-200">
+              {error}
+            </div>
+          )}
 
-        <input
-          className="border rounded px-3 py-2"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          type="password"
-        />
+          <Input
+            label="البريد الإلكتروني"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="name@example.com"
+          />
 
-        <button
-          disabled={loading}
-          className="bg-black text-white rounded px-3 py-2"
-        >
-          {loading ? "Signing in…" : "Sign in"}
-        </button>
-      </form>
+          <Input
+            label="كلمة المرور"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            type="password"
+          />
+
+          <Button disabled={loading} className="mt-2">
+            {loading ? "جارٍ الدخول..." : "دخول"}
+          </Button>
+
+          <div className="text-xs text-[var(--muted)] text-center mt-2">
+            سيتم توجيهك تلقائياً حسب الصلاحية (Admin / Teacher / Student)
+          </div>
+        </form>
+      </div>
     </div>
-
-
   )
-
 }
-

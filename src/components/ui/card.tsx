@@ -1,33 +1,103 @@
-// src/components/ui/Card.tsx (أو حسب مسارك)
-import type React from "react"
+import * as React from "react"
 import { cn } from "@/lib/utils"
 
-export function Card(props: React.HTMLAttributes<HTMLDivElement>) {
-    const { className, ...rest } = props
-    return (
-        <div
-            className={cn("bg-white rounded-3xl border shadow-sm", className)}
-            {...rest}
-        />
-    )
-}
+const Card = React.forwardRef<
+    HTMLDivElement,
+    React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+    <div
+        ref={ref}
+        className={cn(
+            "rounded-[28px] border",
+            "bg-[#fefefe]",
+            "text-[#003d35]",
 
-export function CardHeader(props: React.HTMLAttributes<HTMLDivElement>) {
-    const { className, ...rest } = props
-    return (
-        <div
-            className={cn("p-4 border-b flex items-center justify-between", className)}
-            {...rest}
-        />
-    )
-}
+            "border-[rgba(0,61,53,.18)]",
+            "shadow-[0_8px_24px_rgba(0,61,53,.08)]",
+            className
+        )}
+        {...props}
+    />
+))
+Card.displayName = "Card"
 
-export function CardContent(props: React.HTMLAttributes<HTMLDivElement>) {
-    const { className, ...rest } = props
-    return (
-        <div
-            className={cn("p-4", className)}
-            {...rest}
-        />
-    )
+const CardHeader = React.forwardRef<
+    HTMLDivElement,
+    React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+    <div
+        ref={ref}
+        className={cn(
+            "p-5 border-b",
+            "border-[rgba(0,61,53,.14)]",
+            className
+        )}
+        {...props}
+    />
+))
+CardHeader.displayName = "CardHeader"
+
+const CardTitle = React.forwardRef<
+    HTMLHeadingElement,
+    React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+    <h3
+        ref={ref}
+        className={cn(
+            "text-base font-extrabold",
+            "text-[#003d35]",
+            className
+        )}
+        {...props}
+    />
+))
+CardTitle.displayName = "CardTitle"
+
+const CardDescription = React.forwardRef<
+    HTMLParagraphElement,
+    React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+    <p
+        ref={ref}
+        className={cn(
+            "text-xs",
+            "text-[rgba(0,61,53,.65)]",
+            className
+        )}
+        {...props}
+    />
+))
+CardDescription.displayName = "CardDescription"
+
+const CardContent = React.forwardRef<
+    HTMLDivElement,
+    React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("p-5 text-[#003d35]", className)} {...props} />
+))
+CardContent.displayName = "CardContent"
+
+const CardFooter = React.forwardRef<
+    HTMLDivElement,
+    React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+    <div
+        ref={ref}
+        className={cn(
+            "p-5 border-t",
+            "border-[rgba(0,61,53,.14)]",
+            className
+        )}
+        {...props}
+    />
+))
+CardFooter.displayName = "CardFooter"
+
+export {
+    Card,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardContent,
+    CardFooter,
 }

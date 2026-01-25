@@ -1,12 +1,14 @@
+// src/services/attendances.ts
 import api from "./api"
 import { normalizeId } from "@/lib/normalize"
 
-export type AttendanceStatus = "present" | "absent" | "late" | "excused" | string
+/* ================= Types ================= */
+export type AttendanceStatus = "present" | "absent" | "late" | "excused"
 
 export type Attendance = {
     id: number
-    date: string                 // YYYY-MM-DD
-    start_time?: string | null   // HH:MM
+    date: string // YYYY-MM-DD
+    start_time?: string | null // HH:MM
     end_time?: string | null
     status?: AttendanceStatus | null
     notes?: string | null
@@ -15,20 +17,20 @@ export type Attendance = {
     circle_id?: number | null
     institute_id?: number | null
 
-    // اختياري: علاقات لتسهيل العرض
     student?: { id: number; name: string }
     circle?: { id: number; name: string }
     institute?: { id: number; name: string }
+
     [k: string]: any
 }
 
 export type ListParams = {
     page?: number
     per_page?: number
-    search?: string            // بحث عام (مثلاً باسم الطالب)
-    date_from?: string         // YYYY-MM-DD
-    date_to?: string           // YYYY-MM-DD
-    status?: string
+    search?: string
+    date_from?: string
+    date_to?: string
+    status?: AttendanceStatus
     institute_id?: number
     circle_id?: number
     student_id?: number
@@ -36,10 +38,11 @@ export type ListParams = {
 
 export type Paginated<T> = { data: T[]; meta?: any;[k: string]: any }
 
-function normalizeTime(t: any): string | null | undefined {
-    if (!t) return t
+/* ================= Helpers ================= */
+function normalizeTime(t: any): string | null {
+    if (!t) return null
     const s = String(t).slice(0, 5)
-    return /^\d{2}:\d{2}$/.test(s) ? s : String(t)
+    return /^\d{2}:\d{2}$/.test(s) ? s : null
 }
 
 function normalizeAttendance(raw: any): Attendance {
@@ -57,42 +60,71 @@ function coerceNullish<T extends Record<string, any>>(o: T): T {
     return out
 }
 
-export async function listAttendances(params?: ListParams): Promise<Attendance[] | Paginated<Attendance>> {
-    const { data } = await api.get("/attendances", { params })
-    if (Array.isArray(data)) return data.map(normalizeAttendance)
+/* ================= Admin / Sub-admin ================= */
+/** GET /attendance */
+export async function listAttendances(params?: ListParams): Promise<Paginated<Attendance> | Attendance[]> {
+    const { data } = await api.get("/attendance", { params })
+
+    // لو رجع Resource Collection
     if (Array.isArray(data?.data)) return { ...data, data: data.data.map(normalizeAttendance) }
+    // لو رجع Array مباشر
+    if (Array.isArray(data)) return data.map(normalizeAttendance)
+
     return data
 }
 
-export async function getAttendance(id: number): Promise<Attendance> {
-    const { data } = await api.get(`/attendances/${id}`)
-    return normalizeAttendance(data?.data ?? data)
-}
-
-export async function createAttendance(payload: Partial<Attendance>): Promise<Attendance> {
-    const { data } = await api.post("/attendances", coerceNullish(payload))
-    return normalizeAttendance(data?.data ?? data)
-}
-
+/** PUT /attendance/{id} */
 export async function updateAttendance(id: number, payload: Partial<Attendance>): Promise<Attendance> {
-    const { data } = await api.put(`/attendances/${id}`, coerceNullish(payload))
+    const { data } = await api.put(`/attendance/${id}`, coerceNullish(payload))
     return normalizeAttendance(data?.data ?? data)
 }
 
+/** DELETE /attendance/{id} */
 export async function deleteAttendance(id: number) {
-    const { data } = await api.delete(`/attendances/${id}`)
+    const { data } = await api.delete(`/attendance/${id}`)
     return data
 }
 
+/* ================= Teacher ================= */
+/**
+ * ✅ POST /attendance  (سجل واحد)
+ * الباك عندك TeacherAttendanceController@store غالباً يتوقع student_id واحد
+ */
+export async function createAttendance(payload: {
+    date: string
+    circle_id: number
+    student_id: number
+    status: AttendanceStatus
+    notes?: string | null
+    start_time?: string | null
+    end_time?: string | null
+    institute_id?: number | null
+}): Promise<Attendance> {
+    const { data } = await api.post("/attendance", coerceNullish(payload))
+    return normalizeAttendance(data?.data ?? data)
+}
 
-//////// attendances .techaers
+/**
+ * ✅ تسجيل حضور جماعي بدون تعديل الباك:
+ * بنعمل POST لكل طالب
+ */
 export async function submitAttendance(payload: {
     date: string
     circle_id: number
     records: Array<{ student_id: number; status: AttendanceStatus; notes?: string | null }>
 }) {
-    const { data } = await api.post("/teacher/attendance", payload) // عدّل المسار لو مختلف
-    return data
+    const { date, circle_id, records } = payload
+
+    // sequential (أضمن وأخف على السيرفر)
+    for (const r of records) {
+        await createAttendance({
+            date,
+            circle_id,
+            student_id: r.student_id,
+            status: r.status,
+            notes: r.notes ?? null,
+        })
+    }
+
+    return { message: "saved" }
 }
-
-

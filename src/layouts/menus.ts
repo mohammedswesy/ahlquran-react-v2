@@ -1,8 +1,19 @@
 import type { ElementType } from "react"
 import {
-    LayoutDashboard, School, Users, UserCog, BookOpen, ClipboardList,
-    Megaphone, LineChart, FileText, Bell, Settings, Library, IdCard, Laptop
-} from "lucide-react"
+  PiSquaresFourBold as LayoutDashboard,
+  PiBuildingsBold as School,
+  PiUsersThreeBold as Users,
+  PiUserGearBold as UserCog,
+  PiBookOpenTextBold as BookOpen,
+  PiClipboardTextBold as ClipboardList,
+  PiChartLineUpBold as LineChart,
+  PiFileTextBold as FileText,
+  PiBellRingingBold as Bell,
+  PiGearSixBold as Settings,
+  PiBooksBold as Library,
+  PiIdentificationCardBold as IdCard,
+  PiLaptopBold as Laptop,
+} from "react-icons/pi"
 
 export type Role =
     | "super-admin" | "org-admin" | "institute-admin" | "sub-admin"

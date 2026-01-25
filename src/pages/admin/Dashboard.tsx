@@ -1,17 +1,15 @@
-import AppLayout from '@/layouts/AppLayout'
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Card, CardHeader, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { DataTable } from '@/components/ui/datatable'
-import type { ColumnDef } from '@tanstack/react-table'
-import { toast } from 'sonner'
+import AppLayout from "@/layouts/AppLayout"
+import { useEffect, useMemo, useState } from "react"
+import { Link } from "react-router-dom"
+import { Card, CardHeader, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { DataTable } from "@/components/ui/datatable"
+import type { ColumnDef } from "@tanstack/react-table"
+import { toast } from "sonner"
 
-// NOTE: لو خدمتك اسمها admin.ts بدل dashboard.ts بدّل هذا السطر:
-import { fetchDashboard, type DashboardStats } from '@/services/dashboard'
-import type { Institute } from '@/services/institutes'
+import { fetchDashboard, type DashboardStats } from "@/services/dashboard"
+import type { Institute } from "@/services/institutes"
 
-// Recharts (تأكّد: npm i recharts)
 import {
   ResponsiveContainer,
   AreaChart,
@@ -21,9 +19,8 @@ import {
   Tooltip,
   Legend,
   CartesianGrid,
-} from 'recharts'
+} from "recharts"
 
-// lucide-react icons
 import {
   Users,
   School,
@@ -37,16 +34,59 @@ import {
   IdCard,
   Settings,
   LibraryBig,
-} from 'lucide-react'
-import SkeletonTable from '@/components/ui/skeleton-table'
-import EmptyState from '@/components/ui/empty-state'
+} from "lucide-react"
+
+import SkeletonTable from "@/components/ui/skeleton-table"
+import EmptyState from "@/components/ui/empty-state"
+
+type Tone = "brand" | "beige"
 
 type QuickCard = {
   label: string
-  color: 'gold' | 'teal'
   to?: string
   icon: React.ElementType
   count?: number | string
+  tone?: Tone // اختياري، لو بدك تثبّت لون كرت معين
+}
+
+function toneClass(t: Tone) {
+  if (t === "brand") {
+    return (
+      "bg-[linear-gradient(135deg,rgba(0,61,53,.94),rgba(0,61,53,.55))] " +
+      "border border-[rgba(220,203,160,.22)]"
+    )
+  }
+
+  return (
+    "bg-[linear-gradient(135deg,rgba(220,203,160,.94),rgba(220,203,160,.55))] " +
+    "border border-[rgba(0,61,53,.14)]"
+  )
+}
+
+function toneText(t: Tone) {
+  // الأخضر => نص أبيض
+  if (t === "brand") {
+    return {
+      title: "rgba(254,254,254,.96)",
+      sub: "rgba(254,254,254,.82)",
+      hint: "rgba(254,254,254,.72)",
+      iconBg: "rgba(254,254,254,.12)",
+      iconBorder: "rgba(254,254,254,.18)",
+      iconColor: "rgba(254,254,254,.95)",
+      watermark: "rgba(254,254,254,.12)",
+    }
+  }
+
+  // البيج => نص أخضر
+  return {
+    title: "rgba(0,61,53,.95)",
+    sub: "rgba(0,61,53,.82)",
+    hint: "rgba(0,61,53,.70)",
+    iconBg: "rgba(0,61,53,.10)",
+    iconBorder: "rgba(0,61,53,.18)",
+    iconColor: "rgba(0,61,53,.95)",
+    watermark: "rgba(0,61,53,.10)",
+  }
 }
 
 export default function AdminDashboard() {
@@ -61,26 +101,16 @@ export default function AdminDashboard() {
     setLoading(true)
     try {
       const res = await fetchDashboard()
-      // دعم شكلين محتملين للاستجابة:
-      // 1) { stats, recentInstitutes, attendance_week }
-      // 2) { totals, recent_institutes, attendance_week }
       const s: any = (res as any)?.stats ?? (res as any)?.totals ?? res
-      const r: any[] =
-        (res as any)?.recentInstitutes ??
-        (res as any)?.recent_institutes ??
-        []
-
-      const a: any[] =
-        (res as any)?.attendance_week ??
-        (res as any)?.attendance?.week ??
-        []
+      const r: any[] = (res as any)?.recentInstitutes ?? (res as any)?.recent_institutes ?? []
+      const a: any[] = (res as any)?.attendance_week ?? (res as any)?.attendance?.week ?? []
 
       setStats(s || null)
       setRecent(Array.isArray(r) ? r : [])
       setAttendance(
         Array.isArray(a)
           ? a.map((p: any) => ({
-            date: String(p.date ?? p.day ?? ''),
+            date: String(p.date ?? p.day ?? ""),
             present: Number(p.present ?? p.p ?? 0),
             absent: Number(p.absent ?? p.a ?? 0),
             late: Number(p.late ?? p.l ?? 0),
@@ -89,7 +119,10 @@ export default function AdminDashboard() {
           : []
       )
     } catch (e: any) {
-      toast.info('سيتم ربط إحصاءات الداشبورد حال تجهيز الـ API')
+      toast.info("سيتم ربط إحصاءات الداشبورد حال تجهيز الـ API")
+      setStats(null)
+      setRecent([])
+      setAttendance([])
     } finally {
       setLoading(false)
     }
@@ -100,106 +133,157 @@ export default function AdminDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // ✅ لا يوجد glass نهائياً
+  // ✅ لو بدك تثبت لون كرت: حط tone: "brand" أو "beige"
+  // ✅ غير هيك رح يعمل تناوب تلقائي
   const quick: QuickCard[] = [
-    { label: 'أولياء أمور', icon: Users, color: 'gold', count: (stats as any)?.parents ?? '—', to: '/admin/parents' },
-    { label: 'الحلقات', icon: BookOpen, color: 'gold', count: (stats as any)?.circles ?? '—', to: '/admin/circles' },
-    { label: 'المعلمين', icon: School, color: 'gold', count: (stats as any)?.teachers ?? '—', to: '/admin/employees' },
-    { label: 'الطلبة', icon: Users, color: 'gold', count: (stats as any)?.students ?? '—', to: '/admin/students' },
+    { label: "أولياء أمور", icon: Users, count: (stats as any)?.parents ?? "—", to: "/admin/parents", tone: "brand" },
+    { label: "الحلقات", icon: BookOpen, count: (stats as any)?.circles ?? "—", to: "/admin/circles", tone: "brand" },
+    { label: "المعلمين", icon: School, count: (stats as any)?.teachers ?? "—", to: "/admin/employees", tone: "brand" },
+    { label: "الطلبة", icon: Users, count: (stats as any)?.students ?? "—", to: "/admin/students", tone: "brand" },
 
-    { label: 'مواظبة الموظفين', icon: CalendarCheck2, color: 'teal', to: '#' },
-    { label: 'مواظبة المعلمين', icon: CalendarCheck2, color: 'teal', to: '#' },
-    { label: 'الحضور والغياب', icon: CheckCircle2, color: 'teal', to: '#' },
-    { label: 'الحفظ والمراجعة', icon: BookOpen, color: 'teal', to: '#' },
+    { label: "مواظبة الموظفين", icon: CalendarCheck2, to: "/admin/employee-attendance" },
+    { label: "مواظبة المعلمين", icon: CalendarCheck2, to: "/admin/teacher-attendance" },
+    { label: "الحضور والغياب", icon: CheckCircle2, to: "/admin/attendance" },
+    { label: "الحفظ والمراجعة", icon: BookOpen, to: "" },
 
-    { label: 'اختبارات', icon: FileText, color: 'gold', to: '#' },
-    { label: 'الخطط والمقررات', icon: BookOpen, color: 'gold', to: '#' },
-    { label: 'الإحصاءات', icon: BarChart3, color: 'gold', to: '#' },
-    { label: 'التقارير', icon: FileText, color: 'gold', to: '#' },
+    { label: "اختبارات", icon: FileText, to: "#" },
+    { label: "الخطط والمقررات", icon: BookOpen, to: "#" },
+    { label: "الإحصاءات", icon: BarChart3, to: "#" },
+    { label: "التقارير", icon: FileText, to: "#" },
 
-    { label: 'المكتبة', icon: LibraryBig, color: 'teal', to: '#' },
-    { label: 'المقرأة الإلكترونية', icon: Laptop, color: 'teal', to: '#' },
-    { label: 'السجل الذهبي', icon: Star, color: 'teal', to: '#' },
-    { label: 'إعداد البطاقات', icon: IdCard, color: 'teal', to: '#' },
+    { label: "المكتبة", icon: LibraryBig, to: "#" },
+    { label: "المقرأة الإلكترونية", icon: Laptop, to: "#" },
+    { label: "السجل الذهبي", icon: Star, to: "#" },
+    { label: "إعداد البطاقات", icon: IdCard, to: "#" },
 
-    { label: 'الإعدادات', icon: Settings, color: 'gold', to: '#' },
+    { label: "الإعدادات", icon: Settings, to: "#", tone: "brand" },
   ]
 
-  const goldClass = 'bg-[#b48c43] text-white'
-  const tealClass = 'bg-[#0f5f5c] text-white'
-
-  const columns = useMemo<ColumnDef<Institute>[]>(() => [
-    { header: '#', cell: ({ row }) => row.index + 1 },
-    { accessorKey: 'name', header: 'اسم المعهد' },
-    { accessorKey: 'city', header: 'المدينة', cell: ({ getValue }) => getValue() || '—' },
-  ], [])
+  const columns = useMemo<ColumnDef<Institute>[]>(
+    () => [
+      { header: "#", cell: ({ row }) => row.index + 1 },
+      { accessorKey: "name", header: "اسم المعهد" },
+      { accessorKey: "city", header: "المدينة", cell: ({ getValue }) => getValue() || "—" },
+    ],
+    []
+  )
 
   return (
     <AppLayout>
       <div dir="rtl" className="space-y-6">
-        {/* العنوان */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-extrabold text-gray-800">لوحة القيادة</h1>
-          <div className="flex gap-2">
+        {/* Title */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-extrabold text-[var(--text)]">لوحة القيادة</h1>
+            <div className="text-xs text-[var(--muted)] mt-1">ملخص سريع + روابط الإدارة الأساسية</div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={load}>تحديث</Button>
             <Link to="/admin/institutes"><Button variant="outline">إدارة المعاهد</Button></Link>
             <Link to="/admin/students"><Button variant="outline">إدارة الطلاب</Button></Link>
           </div>
         </div>
 
-        {/* بطاقات إحصائية */}
+        {/* KPI Cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { title: 'المعاهد', value: (stats as any)?.institutes ?? (stats as any)?.parents ?? '—', Icon: School },
-            { title: 'الطلاب', value: (stats as any)?.students ?? '—', Icon: Users },
-            { title: 'الحلقات', value: (stats as any)?.circles ?? '—', Icon: BookOpen },
-            { title: 'المعلمين', value: (stats as any)?.teachers ?? '—', Icon: School },
+            { title: "المعاهد", value: (stats as any)?.institutes ?? "—", Icon: School },
+            { title: "الطلاب", value: (stats as any)?.students ?? "—", Icon: Users },
+            { title: "الحلقات", value: (stats as any)?.circles ?? "—", Icon: BookOpen },
+            { title: "المعلمين", value: (stats as any)?.teachers ?? "—", Icon: School },
           ].map((s, i) => (
             <Card key={i} className="overflow-hidden">
               <CardHeader className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">{s.title}</div>
-                <s.Icon className="text-[var(--primary)]" size={18} />
+                <div className="text-sm text-[var(--muted)]">{s.title}</div>
+                <div className="rounded-2xl p-2 border border-[var(--border)] bg-[rgba(254,254,254,.06)]">
+                  <s.Icon size={18} className="text-[var(--text)] opacity-90" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-extrabold">{s.value}</div>
+                <div className="text-3xl font-extrabold text-[var(--text)]">{s.value}</div>
+                <div className="text-xs text-[var(--muted)] mt-1">آخر تحديث: الآن</div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* شبكة روابط سريعة */}
+        {/* Quick Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
           {quick.map((c, i) => {
             const Icon = c.icon
+
+            // ✅ التناوب (لو ما في tone ثابت)
+            const COLS = 4 // عدد الأعمدة (xl:grid-cols-4)
+            const tone: Tone = c.tone ?? (Math.floor(i / COLS) % 2 === 0 ? "brand" : "beige")
+
+            const palette = toneText(tone)
+
             const box = (
               <div
-                className={`relative overflow-hidden rounded-2xl p-5 shadow hover:shadow-lg transition ${c.color === 'gold' ? goldClass : tealClass}`}
+                className={[
+                  "relative overflow-hidden rounded-[28px] p-5 transition-all",
+                  "shadow-[var(--shadow2)] hover:translate-y-[-1px]",
+                  toneClass(tone),
+                ].join(" ")}
               >
-                <div className="absolute -left-4 -bottom-4 text-white/20 text-[80px]">
+                {/* watermark */}
+                <div
+                  className="absolute -left-8 -bottom-10 text-[110px]"
+                  style={{ color: palette.watermark }}
+                >
                   <Icon />
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-3xl"><Icon /></div>
-                  <div className="flex flex-col">
-                    <span className="text-lg font-semibold">{c.label}</span>
-                    {c.count !== undefined && <span className="text-sm opacity-90">{c.count}</span>}
+
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="rounded-2xl p-3 border"
+                      style={{
+                        background: palette.iconBg,
+                        borderColor: palette.iconBorder,
+                      }}
+                    >
+                      <Icon size={22} style={{ color: palette.iconColor }} />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <span className="text-base font-extrabold" style={{ color: palette.title }}>
+                        {c.label}
+                      </span>
+
+                      {c.count !== undefined && (
+                        <span className="text-sm" style={{ color: palette.sub }}>
+                          {c.count}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-xs" style={{ color: palette.hint }}>
+                    فتح
                   </div>
                 </div>
               </div>
             )
+
             return c.to ? (
-              <Link key={i} to={c.to} className="block">{box}</Link>
+              <Link key={i} to={c.to} className="block">
+                {box}
+              </Link>
             ) : (
               <div key={i}>{box}</div>
             )
           })}
         </div>
 
-        {/* مخطط حضور الأسبوع */}
+        {/* Attendance chart */}
         {attendance.length > 0 && (
           <Card>
-            <CardHeader className="font-bold">حضور الأسبوع</CardHeader>
+            <CardHeader className="font-extrabold text-[var(--text)]">حضور الأسبوع</CardHeader>
             <CardContent>
-              <div style={{ width: '100%', height: 320 }}>
+              <div style={{ width: "100%", height: 320 }}>
                 <ResponsiveContainer>
                   <AreaChart data={attendance}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -207,7 +291,6 @@ export default function AdminDashboard() {
                     <YAxis allowDecimals={false} />
                     <Tooltip />
                     <Legend />
-                    {/* ملاحظة: لا نحدد ألوان يدويًا حسب تعليمات الرسم */}
                     <Area type="monotone" dataKey="present" name="حاضر" strokeOpacity={1} fillOpacity={0.2} />
                     <Area type="monotone" dataKey="absent" name="غائب" strokeOpacity={1} fillOpacity={0.2} />
                     <Area type="monotone" dataKey="late" name="متأخر" strokeOpacity={1} fillOpacity={0.2} />
@@ -219,23 +302,25 @@ export default function AdminDashboard() {
           </Card>
         )}
 
-        {/* آخر المعاهد */}
+        {/* Recent institutes */}
         <Card>
-  <CardHeader className="flex items-center justify-between">
-    <div className="font-bold">آخر المعاهد</div>
-    <Link to="/admin/institutes"><Button size="sm" variant="outline">عرض الكل</Button></Link>
-  </CardHeader>
-  <CardContent>
-    {loading ? (
-      <SkeletonTable rows={5} cols={3} />
-    ) : recent.length === 0 ? (
-      <EmptyState title="لا توجد معاهد حديثة" desc="ابدأ بإضافة معهد جديد." />
-    ) : (
-      <DataTable columns={columns} data={recent} isLoading={false} />
-    )}
-  </CardContent>
-</Card>
+          <CardHeader className="flex items-center justify-between">
+            <div className="font-extrabold text-[var(--text)]">آخر المعاهد</div>
+            <Link to="/admin/institutes">
+              <Button size="sm" variant="outline">عرض الكل</Button>
+            </Link>
+          </CardHeader>
 
+          <CardContent>
+            {loading ? (
+              <SkeletonTable rows={5} cols={3} />
+            ) : recent.length === 0 ? (
+              <EmptyState title="لا توجد معاهد حديثة" desc="ابدأ بإضافة معهد جديد." />
+            ) : (
+              <DataTable columns={columns} data={recent} isLoading={false} />
+            )}
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   )

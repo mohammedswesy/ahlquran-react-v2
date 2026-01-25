@@ -2,6 +2,26 @@
 import api from "./api"
 import { normalizeId } from "@/lib/normalize"
 
+
+export type StudentRow = {
+  id: number
+  name?: string | null
+  [k: string]: any
+}
+
+export async function fetchStudents(params?: { search?: string; page?: number; per_page?: number }) {
+  const { data } = await api.get("/students", { params })
+  const src = data?.data ?? data
+  const rows = Array.isArray(src) ? src.map((x: any) => normalizeId(x) as StudentRow) : []
+  const meta = data?.meta ?? data?.pagination ?? {}
+  return { data: rows, meta }
+}
+
+export async function activateStudent(id: number) {
+  const { data } = await api.patch(`/students/${id}/activate`)
+  return data
+}
+
 // تايب خفيف لاستخدامه في الحضور/القوائم الصغيرة
 export type MiniStudent = {
   id: number
@@ -196,4 +216,8 @@ export async function fetchStudentDashboard(): Promise<StudentDashboardResponse>
       }))
       : [],
   }
+
+
+
+
 }

@@ -1,20 +1,19 @@
-// src/components/ui/Header.tsx
 import type { ReactNode } from "react"
 import { useNavigate } from "react-router-dom"
-import { LogOut } from "lucide-react"
 import { Button } from "./button"
 import { logout } from "@/services/auth"
+import { PiSignOutBold } from "react-icons/pi"
 
 type Props = {
     title?: string
     subtitle?: string
-    right?: ReactNode         // عناصر إضافية يمين الهيدر (أزرار، فلاتر..)
-    hideLogout?: boolean      // إخفاء زر الخروج عند الحاجة
+    right?: ReactNode
+    hideLogout?: boolean
     className?: string
 }
 
 export default function Header({
-    title = "لوحة إدارة نظام القرآن",
+    title = "لوحة الإدارة",
     subtitle,
     right,
     hideLogout = false,
@@ -30,18 +29,29 @@ export default function Header({
     return (
         <header
             dir="rtl"
-            className={`h-16 bg-white border-b flex items-center justify-between px-4 ${className}`}
+            className={`h-16 flex items-center justify-between px-4 ${className}`}
+            style={{
+                background: "#ffffff",
+                borderBottom: "1px solid rgba(0,61,53,.18)",
+                boxShadow: "0 10px 30px rgba(0,0,0,.05)",
+            }}
         >
-            <div className="flex flex-col">
-                <div className="font-semibold text-gray-700">{title}</div>
-                {subtitle && <div className="text-xs text-gray-500">{subtitle}</div>}
+            <div className="flex flex-col leading-tight">
+                <div className="font-extrabold tracking-wide" style={{ color: "#04110f" }}>
+                    {title}
+                </div>
+                {subtitle && (
+                    <div className="text-xs" style={{ color: "rgba(2,8,7,.60)" }}>
+                        {subtitle}
+                    </div>
+                )}
             </div>
 
             <div className="flex items-center gap-2">
                 {right}
                 {!hideLogout && (
                     <Button variant="outline" onClick={onLogout}>
-                        <LogOut className="ml-2" size={16} />
+                        <PiSignOutBold size={18} />
                         خروج
                     </Button>
                 )}

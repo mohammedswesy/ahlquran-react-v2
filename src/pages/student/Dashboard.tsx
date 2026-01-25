@@ -11,7 +11,7 @@ import {
     type StudentDashboardResponse,
     type StudentAttendanceRow,
 } from "@/services/students"
-import { BookOpen, CalendarDays, Trophy } from "lucide-react"
+import { PiBookOpenTextBold, PiCalendarCheckBold, PiTrophyBold } from "react-icons/pi"
 
 export default function StudentDashboard() {
     const [loading, setLoading] = useState(true)
@@ -71,10 +71,10 @@ export default function StudentDashboard() {
                 {/* بطاقات سريعة */}
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
-                        { title: "عدد الحلقات", value: totals?.circles ?? "—", Icon: BookOpen },
-                        { title: "نسبة الحضور", value: totals?.attendance_rate != null ? `${totals.attendance_rate}%` : "—", Icon: CalendarDays },
-                        { title: "عدد التقييمات", value: totals?.assessments_count ?? "—", Icon: Trophy },
-                        { title: "أيام حضور/غياب", value: `${totals?.present_days ?? 0} / ${totals?.absent_days ?? 0}`, Icon: CalendarDays },
+                        { title: "عدد الحلقات", value: totals?.circles ?? "—", Icon: PiBookOpenTextBold },
+                        { title: "نسبة الحضور", value: totals?.attendance_rate != null ? `${totals.attendance_rate}%` : "—", Icon: PiCalendarCheckBold },
+                        { title: "عدد التقييمات", value: totals?.assessments_count ?? "—", Icon: PiTrophyBold },
+                        { title: "أيام حضور/غياب", value: `${totals?.present_days ?? 0} / ${totals?.absent_days ?? 0}`, Icon: PiCalendarCheckBold },
                     ].map((s, i) => (
                         <Card key={i} className="overflow-hidden">
                             <CardHeader className="flex items-center justify-between">

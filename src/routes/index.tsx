@@ -19,19 +19,28 @@ import InstituteAdminDashboardPage from "@/pages/institute/InstituteAdminDashboa
 import InstitutesList from "@/pages/admin/InstitutesList"
 import EmployeesList from "@/pages/admin/EmployeesList"
 import CirclesList from "@/pages/admin/CirclesList"
+import CircleForm from "@/pages/admin/CircleForm"
 import StudentsList from "@/pages/admin/StudentsList"
 import ParentsList from "@/pages/admin/ParentsList"
 import NotificationsList from "@/pages/admin/NotificationsList"
 import TeachersList from "@/pages/admin/TeachersList"
+import ParentCreate from "@/pages/admin/ParentCreate"
+import ParentShow from "@/pages/admin/ParentShow"
+import ParentEdit from "@/pages/admin/ParentEdit"
+import EmployeeAttendancePage from "@/pages/admin/EmployeeAttendancePage"
+import TeacherAttendancesList from "@/pages/admin/TeacherAttendancesList"
+import AttendancesList from "@/pages/admin/AttendancesList"
+
+
+
+
+
 
 // Teacher
 import MyCircles from "@/pages/teacher/MyCircles"
 import TakeAttendance from "@/pages/teacher/TakeAttendance"
 import Assessments from "@/pages/teacher/Assessments"
 import Memorization from "@/pages/teacher/Memorization"
-
-
-
 
 // Student
 import MyProgress from "@/pages/student/MyProgress"
@@ -56,27 +65,42 @@ export default function AppRoutes() {
         {/* Admin group (المشرفين) */}
         <Route
           element={
-            <RoleGuard
-              allow={["super-admin", "org-admin", "institute-admin", "sub-admin"]}
-            />
+            <RoleGuard allow={["super-admin", "org-admin", "institute-admin", "sub-admin"]} />
           }
         >
           <Route path="/admin" element={<AdminDashboard />} />
+
           <Route path="/admin/institutes" element={<InstitutesList />} />
           <Route path="/admin/employees" element={<EmployeesList />} />
+          <Route
+            path="/admin/teacher-attendance"
+            element={<TeacherAttendancesList />}
+          />
+
+          <Route path="/admin/attendance" element={<AttendancesList />} />
+
+
+          {/* ✅ Circles CRUD */}
           <Route path="/admin/circles" element={<CirclesList />} />
+          <Route path="/admin/circles/new" element={<CircleForm />} />
+          <Route path="/admin/circles/:id" element={<CircleForm />} />
+
           <Route path="/admin/students" element={<StudentsList />} />
+
           <Route path="/admin/parents" element={<ParentsList />} />
+          <Route path="/admin/parents/create" element={<ParentCreate />} />
+          <Route path="/admin/parents/:id" element={<ParentShow />} />
+          <Route path="/admin/parents/:id/edit" element={<ParentEdit />} />
+
           <Route path="/admin/notifications" element={<NotificationsList />} />
           <Route path="/admin/teachers" element={<TeachersList />} />
+          <Route path="/admin/employee-attendance" element={<EmployeeAttendancePage />} />
+
         </Route>
 
         {/* ✅ مجموعة خاصة بمدير المعهد */}
         <Route element={<RoleGuard allow={["institute-admin", "sub-admin"]} />}>
-          <Route
-            path="/institute/dashboard"
-            element={<InstituteAdminDashboardPage />}
-          />
+          <Route path="/institute/dashboard" element={<InstituteAdminDashboardPage />} />
         </Route>
 
         {/* Teacher group */}
@@ -86,7 +110,6 @@ export default function AppRoutes() {
           <Route path="/teacher/attendance" element={<TakeAttendance />} />
           <Route path="/teacher/assessments" element={<Assessments />} />
           <Route path="/teacher/memorization" element={<Memorization />} />
-
         </Route>
 
         {/* Student group */}

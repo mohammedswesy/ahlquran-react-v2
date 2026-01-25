@@ -1,42 +1,95 @@
+// src/services/circles.ts
 import api from "./api"
 import { normalizeId } from "@/lib/normalize"
 
 export type Circle = {
     id: number
     name: string
-    institute_id: number
+    institute_id?: number | null
+    type?: string | null
+    start_time?: string | null
+    end_time?: string | null
+    schedule?: any
+    level?: number | null
+    status?: number | null
+
+    institute?: { id: number; name: string } | null
+    students_count?: number
+    teachers_count?: number
     [k: string]: any
 }
 
 function normalizeCircle(raw: any): Circle {
-    const withId = normalizeId(raw)
-    return { ...withId } as Circle
+    const x = normalizeId(raw)
+    return { ...x } as Circle
 }
 
-/** عامّة */
-export async function listCircles(params?: { institute_id?: number; search?: string }) {
+export type ListCirclesParams = {
+    page?: number
+    per_page?: number
+    institute_id?: number
+    type?: string
+    search?: string
+}
+
+export async function listCircles(params?: ListCirclesParams): Promise<any> {
     const { data } = await api.get("/circles", { params })
+    // ممكن يرجع Resource Collection
+    if (Array.isArray(data?.data)) return { ...data, data: data.data.map(normalizeCircle) }
     if (Array.isArray(data)) return data.map(normalizeCircle)
-    if (Array.isArray(data?.data)) return data.data.map(normalizeCircle)
-    return []
+    return data
+}
+export async function listCirclesByInstitute(institute_id: number): Promise<Circle[]> {
+    const { data } = await api.get("/circles", { params: { institute_id, per_page: 1000 } })
+
+    const src =
+        Array.isArray(data?.data) ? data.data :
+            Array.isArray(data) ? data :
+                []
+
+    return src.map(normalizeCircle)
 }
 
-/** حسب معهد */
-export async function listCirclesByInstitute(institute_id: number) {
-    return listCircles({ institute_id })
+export async function getCircle(id: number): Promise<Circle> {
+    const { data } = await api.get(`/circles/${id}`)
+    return normalizeCircle(data?.data ?? data)
 }
-//TeacherCircle
+
+export async function createCircle(payload: any): Promise<Circle> {
+    const { data } = await api.post(`/circles`, payload)
+    return normalizeCircle(data?.data ?? data)
+}
+
+export async function updateCircle(id: number, payload: any): Promise<Circle> {
+    const { data } = await api.put(`/circles/${id}`, payload)
+    return normalizeCircle(data?.data ?? data)
+}
+
+export async function deleteCircle(id: number) {
+    const { data } = await api.delete(`/circles/${id}`)
+    return data
+}
+
+export async function assignCircle(
+    id: number,
+    payload: { teacher_id?: number | null; student_ids?: number[] }
+) {
+    const { data } = await api.post(`/circles/${id}/assign`, payload)
+    return data
+}
+
+// ===== Teacher Circles =====
 export type TeacherCircle = {
     id: number
     name: string
     institute_id?: number | null
     institute_name?: string | null
     students_count?: number
-    schedule?: string | null
+    schedule?: any
     [k: string]: any
 }
 
-function normalizeCircleRow(raw: any): TeacherCircle {
+function normalizeTeacherCircle(raw: any): TeacherCircle {
     const x = normalizeId(raw)
     return {
         ...x,
@@ -46,9 +99,15 @@ function normalizeCircleRow(raw: any): TeacherCircle {
     }
 }
 
-/** حلقات المعلّم الحالي */
+/** ✅ حلقات المعلم الحالي */
 export async function listMyCircles(): Promise<TeacherCircle[]> {
-    const { data } = await api.get("/teacher/circles") // غيّر المسار إذا API مختلف
-    const src = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
-    return src.map(normalizeCircleRow)
+    const { data } = await api.get("/teacher/circles")
+
+    const src =
+        Array.isArray(data?.circles) ? data.circles :
+            Array.isArray(data?.data) ? data.data :
+                Array.isArray(data) ? data :
+                    []
+
+    return src.map(normalizeTeacherCircle)
 }

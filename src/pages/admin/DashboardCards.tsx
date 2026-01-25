@@ -11,9 +11,13 @@ export default function DashboardCards({ totals }: CardsProps) {
     return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3" dir="rtl">
             {items.map((c, i) => (
-                <div key={i} className="rounded-2xl p-4 bg-white shadow">
-                    <div className="text-gray-500 text-sm">{c.label}</div>
-                    <div className="text-2xl font-bold">{c.value}</div>
+                <div
+                    key={i}
+                    className="rounded-[24px] border border-[var(--border)] p-4"
+                    style={{ background: "rgba(255,255,255,.06)", backdropFilter: "blur(12px)" }}
+                >
+                    <div className="text-[var(--muted)] text-sm">{c.label}</div>
+                    <div className="text-2xl font-extrabold text-[var(--text)] mt-1">{c.value}</div>
                 </div>
             ))}
         </div>

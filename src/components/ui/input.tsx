@@ -1,16 +1,24 @@
-import { cn } from "../../lib/cn"
 import * as React from "react"
+import { cn } from "@/lib/utils"
 
-type Props = React.InputHTMLAttributes<HTMLInputElement> & { label?: string }
+type Props = React.InputHTMLAttributes<HTMLInputElement> & {
+  label?: string
+  hint?: string
+}
 
 export const Input = React.forwardRef<HTMLInputElement, Props>(
-  ({ className, label, id, ...props }, ref) => {
+  ({ className, label, hint, id, ...props }, ref) => {
     const input = (
       <input
         id={id}
         ref={ref}
         className={cn(
-          "w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--primary)]",
+          "w-full rounded-2xl px-4 py-3 text-sm",
+          "bg-white",
+          "border border-[rgba(0,61,53,.22)]",
+          "text-[#003d35] placeholder:text-[rgba(0,61,53,.45)]",
+          "focus:outline-none focus:ring-4 focus:ring-[rgba(0,61,53,.15)]",
+          "transition-all",
           className
         )}
         {...props}
@@ -21,11 +29,11 @@ export const Input = React.forwardRef<HTMLInputElement, Props>(
 
     return (
       <label className="block space-y-1">
-        <span className="text-sm text-gray-700">{label}</span>
+        <span className="text-sm text-[rgba(0,61,53,.7)]">{label}</span>
         {input}
+        {hint && <span className="text-xs text-[rgba(0,61,53,.55)]">{hint}</span>}
       </label>
     )
   }
 )
-
 Input.displayName = "Input"

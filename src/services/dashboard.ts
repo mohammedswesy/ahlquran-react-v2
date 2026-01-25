@@ -1,5 +1,9 @@
-import api from './api'
-import type { Institute } from './institutes'
+import api from "./api"
+import type { Institute } from "./institutes"
+
+/* ======================================================
+ * Admin Dashboard
+ * ====================================================== */
 
 export type DashboardStats = {
     parents: number
@@ -21,22 +25,26 @@ export type AttendancePoint = {
     excused: number
 }
 
-
 export async function fetchDashboard(): Promise<DashboardResponse> {
-    // عدّل المسار إذا مختلف عندك في Laravel
-    const { data } = await api.get('/admin/dashboard')
+    const { data } = await api.get("/admin/dashboard")
+
     return {
         stats: {
-            parents: data?.stats?.parents ?? 0,
-            circles: data?.stats?.circles ?? 0,
-            teachers: data?.stats?.teachers ?? 0,
-            students: data?.stats?.students ?? 0,
+            parents: Number(data?.stats?.parents ?? 0),
+            circles: Number(data?.stats?.circles ?? 0),
+            teachers: Number(data?.stats?.teachers ?? 0),
+            students: Number(data?.stats?.students ?? 0),
         },
-        recentInstitutes: data?.recent_institutes ?? [],
+        recentInstitutes: Array.isArray(data?.recent_institutes)
+            ? data.recent_institutes
+            : [],
     }
 }
 
-// ===== Teacher dashboard types =====
+/* ======================================================
+ * Teacher Dashboard
+ * ====================================================== */
+
 export type TeacherAttendancePoint = {
     date: string
     circle?: string
@@ -47,13 +55,17 @@ export type TeacherAttendancePoint = {
 }
 
 export type TeacherDashboard = {
-    totals: { circles: number; students: number }
+    totals: {
+        circles: number
+        students: number
+    }
     recentAttendance: TeacherAttendancePoint[]
 }
 
-// يدعم أشكال استجابة مختلفة
 export async function fetchTeacherDashboard(): Promise<TeacherDashboard> {
-    const { data } = await api.get("/dashboard/teacher").catch(() => ({ data: {} as any }))
+    const { data } = await api.get("/dashboard/teacher").catch(() => ({
+        data: {} as any,
+    }))
 
     const totalsSrc = (data?.totals ?? data?.stats ?? {}) as any
     const attendanceSrc =
@@ -70,7 +82,11 @@ export async function fetchTeacherDashboard(): Promise<TeacherDashboard> {
     const recentAttendance: TeacherAttendancePoint[] = Array.isArray(attendanceSrc)
         ? attendanceSrc.map((p) => ({
             date: String(p.date ?? p.day ?? ""),
-            circle: String(p.circle ?? p.circle_name ?? p.class ?? ""),
+            circle: p.circle
+                ? String(p.circle)
+                : p.circle_name
+                    ? String(p.circle_name)
+                    : undefined,
             present: Number(p.present ?? p.p ?? 0),
             absent: Number(p.absent ?? p.a ?? 0),
             late: Number(p.late ?? p.l ?? 0),
@@ -79,4 +95,49 @@ export async function fetchTeacherDashboard(): Promise<TeacherDashboard> {
         : []
 
     return { totals, recentAttendance }
+}
+
+/* ======================================================
+ * Parent Dashboard ✅
+ * ====================================================== */
+
+export type ParentDashboardTotals = {
+    children: number
+    attendance: {
+        total: number
+        present: number
+    }
+}
+
+export type ParentDashboardResponse = {
+    totals: ParentDashboardTotals
+    children: Array<{
+        id: number
+        name: string
+        institute?: { id: number; name: string } | null
+        circle?: { id: number; name: string } | null
+    }>
+    recent_attendance: any[]
+    notifications: any[]
+}
+
+export async function fetchParentDashboard(): Promise<ParentDashboardResponse> {
+    const { data } = await api.get("/parent/dashboard")
+
+    return {
+        totals: {
+            children: Number(data?.totals?.children ?? 0),
+            attendance: {
+                total: Number(data?.totals?.attendance?.total ?? 0),
+                present: Number(data?.totals?.attendance?.present ?? 0),
+            },
+        },
+        children: Array.isArray(data?.children) ? data.children : [],
+        recent_attendance: Array.isArray(data?.recent_attendance)
+            ? data.recent_attendance
+            : [],
+        notifications: Array.isArray(data?.notifications)
+            ? data.notifications
+            : [],
+    }
 }
