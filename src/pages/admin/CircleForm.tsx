@@ -1,20 +1,22 @@
-// src/pages/admin/CircleForm.tsx
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import AppLayout from "@/layouts/AppLayout"
 import Header from "@/components/ui/Header"
 import { useNavigate, useParams } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardContent } from "@/components/ui/card"
 import { toast } from "sonner"
 
 import { createCircle, getCircle, updateCircle } from "@/services/circles"
+import { useAuth } from "@/store/auth"
+import ScheduleBuilder, { type Schedule } from "@/components/app/ScheduleBuilder"
 
 type FormState = {
   name: string
   type: string
+  level: number | ""
+  schedule: Schedule | null
   institute_id: number | ""
-  start_time: string
-  end_time: string
 }
 
 export default function CircleForm() {
@@ -22,15 +24,18 @@ export default function CircleForm() {
   const nav = useNavigate()
   const editing = !!id && id !== "new"
 
+  const role = useAuth((s) => s.role)
+  const isSuperAdmin = role === "super-admin"
+
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const [form, setForm] = useState<FormState>({
     name: "",
     type: "hifz",
+    level: "",
+    schedule: null,
     institute_id: "",
-    start_time: "",
-    end_time: "",
   })
 
   useEffect(() => {
@@ -39,12 +44,27 @@ export default function CircleForm() {
         setLoading(true)
         try {
           const c = await getCircle(Number(id))
+
+          // schedule ممكن يجي string أو object
+          let schedule: any = null
+          if (c.schedule) {
+            if (typeof c.schedule === "string") {
+              try {
+                schedule = JSON.parse(c.schedule)
+              } catch {
+                schedule = null
+              }
+            } else {
+              schedule = c.schedule
+            }
+          }
+
           setForm({
             name: c.name ?? "",
             type: (c.type ?? "hifz") as any,
+            level: (c.level ?? "") as any,
+            schedule: schedule ?? null,
             institute_id: (c.institute_id ?? "") as any,
-            start_time: c.start_time ? String(c.start_time).slice(0, 16) : "",
-            end_time: c.end_time ? String(c.end_time).slice(0, 16) : "",
           })
         } catch (e: any) {
           toast.error(e?.response?.data?.message || "تعذر جلب بيانات الحلقة")
@@ -56,24 +76,44 @@ export default function CircleForm() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
     if (!form.name.trim()) return toast.error("اسم الحلقة مطلوب")
-    if (form.institute_id === "" || Number(form.institute_id) <= 0) return toast.error("رقم المعهد مطلوب")
+
+    if (isSuperAdmin) {
+      if (form.institute_id === "" || Number(form.institute_id) <= 0) {
+        return toast.error("رقم المعهد مطلوب للسوبر أدمن")
+      }
+    }
+
+    // ✅ تحقق بسيط من الجدول
+    if (form.schedule) {
+      if (!Array.isArray(form.schedule.days) || form.schedule.days.length === 0) {
+        return toast.error("اختَر يوم واحد على الأقل في الجدول")
+      }
+      if (!form.schedule.from || !form.schedule.to) {
+        return toast.error("حدد وقت (من/إلى) في الجدول")
+      }
+      if (form.schedule.from >= form.schedule.to) {
+        return toast.error("وقت (من) لازم يكون قبل (إلى)")
+      }
+    }
 
     setSaving(true)
     try {
-      const payload = {
+      const payload: any = {
         name: form.name,
         type: form.type,
-        institute_id: Number(form.institute_id),
-        start_time: form.start_time ? form.start_time.replace("T", " ") + ":00" : null,
-        end_time: form.end_time ? form.end_time.replace("T", " ") + ":00" : null,
+        level: form.level === "" ? null : Number(form.level),
+        schedule: form.schedule, // نفس شكل JSON اللي كنت تستخدمه
       }
 
+      if (isSuperAdmin) payload.institute_id = Number(form.institute_id)
+
       if (editing) {
-        await updateCircle(Number(id), payload as any)
+        await updateCircle(Number(id), payload)
         toast.success("تم التعديل")
       } else {
-        await createCircle(payload as any)
+        await createCircle(payload)
         toast.success("تمت الإضافة")
       }
 
@@ -87,71 +127,84 @@ export default function CircleForm() {
 
   return (
     <AppLayout>
-      <Header title={editing ? "تعديل حلقة" : "إضافة حلقة"} subtitle="بيانات الحلقة" />
+      <div dir="rtl" className="space-y-4">
+        <Header title={editing ? "تعديل حلقة" : "إضافة حلقة"} subtitle="بيانات الحلقة" />
 
-      <form dir="rtl" onSubmit={onSubmit} className="grid gap-4 max-w-xl bg-white p-6 rounded-xl shadow">
-        <Input
-          label="اسم الحلقة"
-          value={form.name}
-          onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-          disabled={loading}
-        />
+        <div className="mx-auto w-full max-w-3xl">
+          <Card className="overflow-hidden">
+            <CardHeader className="border-b">
+              <div className="font-extrabold text-[var(--text)]">
+                {editing ? "تعديل بيانات الحلقة" : "إنشاء حلقة جديدة"}
+              </div>
+              <div className="text-xs text-[var(--muted)] mt-1">
+                اختر الأيام والأوقات من الجدول — بدون حقول وقت منفصلة.
+              </div>
+            </CardHeader>
 
-        <div>
-          <label className="block text-sm text-gray-700 mb-1">Type</label>
-          <select
-            className="w-full rounded-2xl border px-3 py-2"
-            value={form.type}
-            onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}
-            disabled={loading}
-          >
-            <option value="hifz">Hifz</option>
-            <option value="tajweed">Tajweed</option>
-            <option value="arabic">Arabic</option>
-          </select>
+            <CardContent>
+              <form onSubmit={onSubmit} className="grid gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="اسم الحلقة"
+                    value={form.name}
+                    onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                    disabled={loading}
+                  />
+
+                  <div>
+                    <label className="block text-sm mb-1 text-[var(--text)]">النوع</label>
+                    <select
+                      className="w-full rounded-2xl border px-3 py-2 bg-white"
+                      value={form.type}
+                      onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}
+                      disabled={loading}
+                    >
+                      <option value="hifz">حفظ</option>
+                      <option value="tajweed">تجويد</option>
+                      <option value="arabic">لغة عربية</option>
+                    </select>
+                  </div>
+
+                  {isSuperAdmin && (
+                    <Input
+                      label="رقم المعهد (Super Admin فقط)"
+                      type="number"
+                      value={form.institute_id as any}
+                      onChange={(e) => setForm((p) => ({ ...p, institute_id: e.target.value as any }))}
+                      disabled={loading}
+                    />
+                  )}
+
+                  <Input
+                    label="المستوى"
+                    type="number"
+                    placeholder="مثال: 1"
+                    value={form.level as any}
+                    onChange={(e) => setForm((p) => ({ ...p, level: e.target.value as any }))}
+                    disabled={loading}
+                  />
+                </div>
+
+                {/* ✅ الجدول */}
+                <ScheduleBuilder
+                  value={form.schedule}
+                  onChange={(schedule) => setForm((p) => ({ ...p, schedule }))}
+                  disabled={loading}
+                />
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Button type="button" variant="outline" onClick={() => nav(-1)}>
+                    إلغاء
+                  </Button>
+                  <Button disabled={saving || loading} type="submit">
+                    {saving ? "جاري الحفظ..." : "حفظ"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         </div>
-
-        <Input
-          label="Institute ID"
-          type="number"
-          value={form.institute_id as any}
-          onChange={(e) => setForm((p) => ({ ...p, institute_id: e.target.value as any }))}
-          disabled={loading}
-        />
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-gray-700 mb-1">Start time</label>
-            <input
-              className="border rounded-2xl px-3 py-2 w-full"
-              type="datetime-local"
-              value={form.start_time}
-              onChange={(e) => setForm((p) => ({ ...p, start_time: e.target.value }))}
-              disabled={loading}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-700 mb-1">End time</label>
-            <input
-              className="border rounded-2xl px-3 py-2 w-full"
-              type="datetime-local"
-              value={form.end_time}
-              onChange={(e) => setForm((p) => ({ ...p, end_time: e.target.value }))}
-              disabled={loading}
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          <Button disabled={saving || loading} type="submit">
-            {saving ? "جاري الحفظ..." : "حفظ"}
-          </Button>
-          <Button type="button" variant="outline" onClick={() => nav(-1)}>
-            إلغاء
-          </Button>
-        </div>
-      </form>
+      </div>
     </AppLayout>
   )
 }

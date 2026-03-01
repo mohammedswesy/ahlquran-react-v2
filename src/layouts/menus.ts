@@ -1,18 +1,18 @@
 import type { ElementType } from "react"
 import {
-  PiSquaresFourBold as LayoutDashboard,
-  PiBuildingsBold as School,
-  PiUsersThreeBold as Users,
-  PiUserGearBold as UserCog,
-  PiBookOpenTextBold as BookOpen,
-  PiClipboardTextBold as ClipboardList,
-  PiChartLineUpBold as LineChart,
-  PiFileTextBold as FileText,
-  PiBellRingingBold as Bell,
-  PiGearSixBold as Settings,
-  PiBooksBold as Library,
-  PiIdentificationCardBold as IdCard,
-  PiLaptopBold as Laptop,
+    PiSquaresFourBold as LayoutDashboard,
+    PiBuildingsBold as School,
+    PiUsersThreeBold as Users,
+    PiUserGearBold as UserCog,
+    PiBookOpenTextBold as BookOpen,
+    PiClipboardTextBold as ClipboardList,
+    PiChartLineUpBold as LineChart,
+    PiFileTextBold as FileText,
+    PiBellRingingBold as Bell,
+    PiGearSixBold as Settings,
+    PiBooksBold as Library,
+    PiIdentificationCardBold as IdCard,
+    PiLaptopBold as Laptop,
 } from "react-icons/pi"
 
 export type Role =
@@ -38,22 +38,31 @@ export function getMenuForRole(role: Role | null | undefined): MenuSection[] {
         role === "institute-admin" ||
         role === "sub-admin"
 
+    const isSuperAdmin = role === "super-admin"
+
     if (isAdmin) {
         return [
             {
-                items: [
-                    { label: "لوحة القيادة", to: "/admin", icon: LayoutDashboard },
-                ]
+                items: [{ label: "لوحة القيادة", to: "/admin", icon: LayoutDashboard }],
             },
             {
                 title: "الإدارة",
                 items: [
-                    { label: "المعاهد", to: "/admin/institutes", icon: School },
+                    // ✅ سوبر أدمن فقط
+                    ...(isSuperAdmin
+                        ? [{ label: "المعاهد", to: "/admin/institutes", icon: School }]
+                        : []),
+
                     { label: "الحلقات", to: "/admin/circles", icon: BookOpen },
-                    { label: "المعلّمون", to: "/admin/employees", icon: UserCog },
+
+                    // ✅ سوبر أدمن فقط (لأن الراوت عندك محمي سوبر)
+                    ...(isSuperAdmin
+                        ? [{ label: "المعلّمون", to: "/admin/employees", icon: UserCog }]
+                        : []),
+
                     { label: "الطلاب", to: "/admin/students", icon: Users },
                     { label: "أولياء الأمور", to: "/admin/parents", icon: Users },
-                ]
+                ],
             },
             {
                 title: "تشغيل",
@@ -62,7 +71,7 @@ export function getMenuForRole(role: Role | null | undefined): MenuSection[] {
                     { label: "التقارير", to: "/admin/reports", icon: FileText },
                     { label: "الإشعارات", to: "/admin/notifications", icon: Bell },
                     { label: "إحصاءات", to: "/admin/stats", icon: LineChart },
-                ]
+                ],
             },
             {
                 title: "أخرى",
@@ -71,8 +80,8 @@ export function getMenuForRole(role: Role | null | undefined): MenuSection[] {
                     { label: "المقرأة الإلكترونية", to: "/admin/erecite", icon: Laptop },
                     { label: "إعداد البطاقات", to: "/admin/cards", icon: IdCard },
                     { label: "الإعدادات", to: "/admin/settings", icon: Settings },
-                ]
-            }
+                ],
+            },
         ]
     }
 
@@ -85,8 +94,8 @@ export function getMenuForRole(role: Role | null | undefined): MenuSection[] {
                     { label: "حلقاتي", to: "/teacher/circles", icon: BookOpen },
                     { label: "تسجيل الحضور", to: "/teacher/attendance", icon: ClipboardList },
                     { label: "التقييمات", to: "/teacher/assessments", icon: FileText },
-                ]
-            }
+                ],
+            },
         ]
     }
 
@@ -97,8 +106,8 @@ export function getMenuForRole(role: Role | null | undefined): MenuSection[] {
                 items: [
                     { label: "تقدّمي", to: "/student/progress", icon: LineChart },
                     { label: "جدولي", to: "/student/schedule", icon: ClipboardList },
-                ]
-            }
+                ],
+            },
         ]
     }
 
@@ -109,8 +118,8 @@ export function getMenuForRole(role: Role | null | undefined): MenuSection[] {
                 items: [
                     { label: "أبنائي", to: "/parent/children", icon: Users },
                     { label: "التقارير", to: "/parent/reports", icon: FileText },
-                ]
-            }
+                ],
+            },
         ]
     }
 
@@ -121,13 +130,12 @@ export function getMenuForRole(role: Role | null | undefined): MenuSection[] {
                 items: [
                     { label: "المهام", to: "/employee/tasks", icon: ClipboardList },
                     { label: "الأشخاص", to: "/employee/people", icon: Users },
-                ]
-            }
+                ],
+            },
         ]
     }
 
     // افتراضي (لو مافي دور)
-    return [
-        { items: [{ label: "لوحة القيادة", to: "/admin", icon: LayoutDashboard }] },
-    ]
+    return [{ items: [{ label: "لوحة القيادة", to: "/admin", icon: LayoutDashboard }] }]
 }
+

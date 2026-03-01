@@ -29,20 +29,20 @@ const api = axios.create({
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token: string | null = getToken()
 
-  // تأكد أن headers موجودة
+ 
   config.headers = config.headers ?? ({} as any)
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
 
-  // للتأكيد فقط
+
   config.headers.Accept = "application/json"
 
   return config
 })
 
-/** شكل الخطأ القياسي من API */
+
 type ApiErrorPayload = {
   success?: boolean
   status?: "error" | "fail"

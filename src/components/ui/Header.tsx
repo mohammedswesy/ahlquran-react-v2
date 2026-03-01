@@ -29,11 +29,12 @@ export default function Header({
     return (
         <header
             dir="rtl"
-            className={`h-16 flex items-center justify-between px-4 ${className}`}
+            className={`sticky top-0 z-30 h-16 flex items-center justify-between px-4 ${className}`}
             style={{
-                background: "#ffffff",
-                borderBottom: "1px solid rgba(0,61,53,.18)",
-                boxShadow: "0 10px 30px rgba(0,0,0,.05)",
+                background: "rgba(255,255,255,.82)",
+                backdropFilter: "blur(14px)",
+                borderBottom: "1px solid rgba(0,61,53,.12)",
+                boxShadow: "0 10px 30px rgba(0,0,0,.04)",
             }}
         >
             <div className="flex flex-col leading-tight">

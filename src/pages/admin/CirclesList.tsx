@@ -11,6 +11,103 @@ import { toast } from "sonner"
 
 import { listCircles, deleteCircle, type Circle } from "@/services/circles"
 
+const DAY_AR: Record<string, string> = {
+  sat: "السبت",
+  sun: "الأحد",
+  mon: "الإثنين",
+  tue: "الثلاثاء",
+  wed: "الأربعاء",
+  thu: "الخميس",
+  fri: "الجمعة",
+}
+
+function normTime(t?: string | null) {
+  if (!t) return ""
+  const m = String(t).match(/(\d{2}:\d{2})/)
+  return m?.[1] ?? String(t)
+}
+
+
+function parseSchedule(schedule: any): Array<{ days: string[]; from?: string; to?: string }> {
+  if (!schedule) return []
+
+  if (typeof schedule === "string") {
+    try {
+      schedule = JSON.parse(schedule)
+    } catch {
+      return []
+    }
+  }
+
+  if (Array.isArray(schedule)) {
+    return schedule
+      .map((s) => ({
+        days: Array.isArray(s?.days) ? s.days : [],
+        from: normTime(s?.from),
+        to: normTime(s?.to),
+      }))
+      .filter((x) => x.days.length || x.from || x.to)
+  }
+
+  // object
+  return [
+    {
+      days: Array.isArray(schedule?.days) ? schedule.days : [],
+      from: normTime(schedule?.from),
+      to: normTime(schedule?.to),
+    },
+  ].filter((x) => x.days.length || x.from || x.to)
+}
+
+function ScheduleCell({ schedule }: { schedule: any }) {
+  const lines = parseSchedule(schedule)
+  if (!lines.length) return <span className="text-[var(--muted)]">—</span>
+
+  return (
+    <div className="flex flex-col gap-1">
+      {lines.map((l, idx) => {
+        const days = l.days.map((d) => DAY_AR[d] ?? d)
+        const timeLabel = l.from && l.to ? `${l.from} → ${l.to}` : l.from ? `من ${l.from}` : l.to ? `إلى ${l.to}` : ""
+
+        return (
+          <div key={idx} className="flex flex-wrap items-center gap-1">
+            {days.length ? (
+              days.map((d) => (
+                <span
+                  key={d}
+                  className="px-2 py-1 rounded-full text-[11px] font-semibold border"
+                  style={{
+                    background: "rgba(0,61,53,.06)",
+                    borderColor: "rgba(0,61,53,.18)",
+                    color: "rgba(0,61,53,.95)",
+                  }}
+                >
+                  {d}
+                </span>
+              ))
+            ) : (
+              <span className="text-[11px] text-[var(--muted)]">بدون أيام</span>
+            )}
+
+            {timeLabel && (
+              <span
+                className="px-2 py-1 rounded-full text-[11px] font-semibold border"
+                style={{
+                  background: "rgba(220,203,160,.35)",
+                  borderColor: "rgba(0,61,53,.18)",
+                  color: "rgba(0,61,53,.95)",
+                }}
+              >
+                {timeLabel}
+              </span>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function CirclesList() {
   const [rows, setRows] = useState<Circle[]>([])
   const [loading, setLoading] = useState(true)
@@ -23,21 +120,14 @@ export default function CirclesList() {
   const load = async () => {
     setLoading(true)
     try {
-      const res: any = await listCircles({
+      const res = await listCircles({
         page,
         per_page: perPage,
         search: search || undefined,
-      } as any)
+      })
 
-      // ✅ يدعم شكلين: Array أو Paginated
-      if (Array.isArray(res)) {
-        setRows(res as Circle[])
-        setMeta(null)
-      } else {
-        const dataArr = Array.isArray(res?.data) ? res.data : []
-        setRows(dataArr as Circle[])
-        setMeta(res?.meta ?? null)
-      }
+      setRows(res.data)
+      setMeta(res.meta ?? null)
     } catch (e: any) {
       toast.error(e?.response?.data?.message || "تعذر تحميل الحلقات")
       setRows([])
@@ -81,22 +171,38 @@ export default function CirclesList() {
         "—",
     },
 
+    // ✅ أيام الدوام
+    {
+      id: "days",
+      header: "الأيام",
+      cell: ({ row }) => {
+        const s = row.original.schedule
+        if (!s?.days || !Array.isArray(s.days) || s.days.length === 0) return "—"
+        return s.days.join(" - ")
+      },
+    },
+
+    // ✅ الوقت
+    {
+      id: "time",
+      header: "الوقت",
+      cell: ({ row }) => {
+        const s = row.original.schedule
+        if (!s?.from || !s?.to) return "—"
+        return `${s.from} - ${s.to}`
+      },
+    },
+
     {
       id: "students",
       header: "Students",
-      cell: ({ row }) =>
-        row.original.students_count ??
-        (Array.isArray(row.original.students) ? row.original.students.length : undefined) ??
-        "—",
+      cell: ({ row }) => row.original.students_count ?? "—",
     },
 
     {
       id: "teachers",
       header: "Teachers",
-      cell: ({ row }) =>
-        row.original.teachers_count ??
-        (Array.isArray(row.original.teachers) ? row.original.teachers.length : undefined) ??
-        "—",
+      cell: ({ row }) => row.original.teachers_count ?? "—",
     },
 
     {
@@ -107,7 +213,6 @@ export default function CirclesList() {
           <Link to={`/admin/circles/${row.original.id}`}>
             <Button size="sm" variant="outline">Edit</Button>
           </Link>
-
           <Button
             size="sm"
             variant="destructive"
@@ -118,7 +223,8 @@ export default function CirclesList() {
         </div>
       ),
     },
-  ], []) // onDelete ثابت وما بيحتاج dependencies
+  ], [])
+
 
   return (
     <AppLayout>
@@ -150,26 +256,17 @@ export default function CirclesList() {
           <div className="flex items-center justify-between text-sm text-gray-600">
             <div>صفحة {meta.current_page} من {meta.last_page}</div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
                 السابق
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= meta.last_page}
-                onClick={() => setPage((p) => p + 1)}
-              >
+              <Button variant="outline" size="sm" disabled={page >= meta.last_page} onClick={() => setPage((p) => p + 1)}>
                 التالي
               </Button>
             </div>
           </div>
         )}
       </div>
+
     </AppLayout>
   )
 }

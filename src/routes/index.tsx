@@ -1,4 +1,4 @@
-// src/routes/AppRoutes.tsx
+// src/routes/index.tsx  (أو src/routes/AppRoutes.tsx)
 import { Routes, Route, Navigate } from "react-router-dom"
 import { ProtectedRoute, RoleGuard } from "./guards"
 
@@ -12,7 +12,6 @@ import TeacherDashboard from "@/pages/teacher/Dashboard"
 import StudentDashboard from "@/pages/student/Dashboard"
 import ParentDashboard from "@/pages/parent/Dashboard"
 import EmployeeDashboard from "@/pages/employee/Dashboard"
-
 import InstituteAdminDashboardPage from "@/pages/institute/InstituteAdminDashboardPage"
 
 // Admin: Lists
@@ -30,11 +29,6 @@ import ParentEdit from "@/pages/admin/ParentEdit"
 import EmployeeAttendancePage from "@/pages/admin/EmployeeAttendancePage"
 import TeacherAttendancesList from "@/pages/admin/TeacherAttendancesList"
 import AttendancesList from "@/pages/admin/AttendancesList"
-
-
-
-
-
 
 // Teacher
 import MyCircles from "@/pages/teacher/MyCircles"
@@ -62,29 +56,24 @@ export default function AppRoutes() {
       <Route path="/unauthorized" element={<Unauthorized />} />
 
       <Route element={<ProtectedRoute />}>
-        {/* Admin group (المشرفين) */}
-        <Route
-          element={
-            <RoleGuard allow={["super-admin", "org-admin", "institute-admin", "sub-admin"]} />
-          }
-        >
+        {/* =========================
+            ADMIN (كل الأدمنز)
+            ========================= */}
+        <Route element={<RoleGuard allow={["super-admin", "org-admin", "institute-admin", "sub-admin"]} />}>
+          {/* Dashboard */}
           <Route path="/admin" element={<AdminDashboard />} />
 
-          <Route path="/admin/institutes" element={<InstitutesList />} />
-          <Route path="/admin/employees" element={<EmployeesList />} />
-          <Route
-            path="/admin/teacher-attendance"
-            element={<TeacherAttendancesList />}
-          />
-
+          {/* Attendance / Reports */}
+          <Route path="/admin/teacher-attendance" element={<TeacherAttendancesList />} />
           <Route path="/admin/attendance" element={<AttendancesList />} />
+          <Route path="/admin/employee-attendance" element={<EmployeeAttendancePage />} />
 
-
-          {/* ✅ Circles CRUD */}
+          {/* Circles CRUD */}
           <Route path="/admin/circles" element={<CirclesList />} />
           <Route path="/admin/circles/new" element={<CircleForm />} />
           <Route path="/admin/circles/:id" element={<CircleForm />} />
 
+          {/* People Management */}
           <Route path="/admin/students" element={<StudentsList />} />
 
           <Route path="/admin/parents" element={<ParentsList />} />
@@ -92,18 +81,30 @@ export default function AppRoutes() {
           <Route path="/admin/parents/:id" element={<ParentShow />} />
           <Route path="/admin/parents/:id/edit" element={<ParentEdit />} />
 
-          <Route path="/admin/notifications" element={<NotificationsList />} />
           <Route path="/admin/teachers" element={<TeachersList />} />
-          <Route path="/admin/employee-attendance" element={<EmployeeAttendancePage />} />
 
+          {/* System Notifications (ممكن تخليها للسوبر فقط لو بدك) */}
+          <Route path="/admin/notifications" element={<NotificationsList />} />
         </Route>
 
-        {/* ✅ مجموعة خاصة بمدير المعهد */}
+        {/* =========================
+            SUPER ADMIN ONLY
+            ========================= */}
+        <Route element={<RoleGuard allow={["super-admin"]} />}>
+          <Route path="/admin/institutes" element={<InstitutesList />} />
+          <Route path="/admin/employees" element={<EmployeesList />} />
+        </Route>
+
+        {/* =========================
+            Institute Admin Dashboard
+            ========================= */}
         <Route element={<RoleGuard allow={["institute-admin", "sub-admin"]} />}>
           <Route path="/institute/dashboard" element={<InstituteAdminDashboardPage />} />
         </Route>
 
-        {/* Teacher group */}
+        {/* =========================
+            Teacher
+            ========================= */}
         <Route element={<RoleGuard allow={["teacher"]} />}>
           <Route path="/teacher" element={<TeacherDashboard />} />
           <Route path="/teacher/circles" element={<MyCircles />} />
@@ -112,21 +113,27 @@ export default function AppRoutes() {
           <Route path="/teacher/memorization" element={<Memorization />} />
         </Route>
 
-        {/* Student group */}
+        {/* =========================
+            Student
+            ========================= */}
         <Route element={<RoleGuard allow={["student"]} />}>
           <Route path="/student" element={<StudentDashboard />} />
           <Route path="/student/progress" element={<MyProgress />} />
           <Route path="/student/schedule" element={<MySchedule />} />
         </Route>
 
-        {/* Parent group */}
+        {/* =========================
+            Parent
+            ========================= */}
         <Route element={<RoleGuard allow={["parent"]} />}>
           <Route path="/parent" element={<ParentDashboard />} />
           <Route path="/parent/children" element={<Children />} />
           <Route path="/parent/reports" element={<Reports />} />
         </Route>
 
-        {/* Employee group */}
+        {/* =========================
+            Employee
+            ========================= */}
         <Route element={<RoleGuard allow={["employee"]} />}>
           <Route path="/employee" element={<EmployeeDashboard />} />
           <Route path="/employee/tasks" element={<Tasks />} />

@@ -40,7 +40,6 @@ export const useAuth = create<AuthState>((set) => ({
     }
     set({ role })
   },
-
   logout: () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("token")
@@ -48,4 +47,5 @@ export const useAuth = create<AuthState>((set) => ({
     }
     set({ token: null, role: null })
   },
+
 }))

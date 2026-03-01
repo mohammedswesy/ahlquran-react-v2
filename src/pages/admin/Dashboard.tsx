@@ -39,6 +39,9 @@ import {
 import SkeletonTable from "@/components/ui/skeleton-table"
 import EmptyState from "@/components/ui/empty-state"
 
+// ✅ جديد: للتمييز بين super-admin وغيره
+import { useAuth, type Role } from "@/store/auth"
+
 type Tone = "brand" | "beige"
 
 type QuickCard = {
@@ -90,6 +93,9 @@ function toneText(t: Tone) {
 }
 
 export default function AdminDashboard() {
+  const role = useAuth((s) => s.role as Role | null)
+  const isSuperAdmin = role === "super-admin"
+
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [recent, setRecent] = useState<Institute[]>([])
   const [attendance, setAttendance] = useState<
@@ -110,12 +116,12 @@ export default function AdminDashboard() {
       setAttendance(
         Array.isArray(a)
           ? a.map((p: any) => ({
-            date: String(p.date ?? p.day ?? ""),
-            present: Number(p.present ?? p.p ?? 0),
-            absent: Number(p.absent ?? p.a ?? 0),
-            late: Number(p.late ?? p.l ?? 0),
-            excused: Number(p.excused ?? p.e ?? 0),
-          }))
+              date: String(p.date ?? p.day ?? ""),
+              present: Number(p.present ?? p.p ?? 0),
+              absent: Number(p.absent ?? p.a ?? 0),
+              late: Number(p.late ?? p.l ?? 0),
+              excused: Number(p.excused ?? p.e ?? 0),
+            }))
           : []
       )
     } catch (e: any) {
@@ -133,9 +139,6 @@ export default function AdminDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ✅ لا يوجد glass نهائياً
-  // ✅ لو بدك تثبت لون كرت: حط tone: "brand" أو "beige"
-  // ✅ غير هيك رح يعمل تناوب تلقائي
   const quick: QuickCard[] = [
     { label: "أولياء أمور", icon: Users, count: (stats as any)?.parents ?? "—", to: "/admin/parents", tone: "brand" },
     { label: "الحلقات", icon: BookOpen, count: (stats as any)?.circles ?? "—", to: "/admin/circles", tone: "brand" },
@@ -181,15 +184,27 @@ export default function AdminDashboard() {
 
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={load}>تحديث</Button>
-            <Link to="/admin/institutes"><Button variant="outline">إدارة المعاهد</Button></Link>
-            <Link to="/admin/students"><Button variant="outline">إدارة الطلاب</Button></Link>
+
+            {/* ✅ إدارة المعاهد فقط للسوبر أدمن */}
+            {isSuperAdmin && (
+              <Link to="/admin/institutes">
+                <Button variant="outline">إدارة المعاهد</Button>
+              </Link>
+            )}
+
+            <Link to="/admin/students">
+              <Button variant="outline">إدارة الطلاب</Button>
+            </Link>
           </div>
         </div>
 
         {/* KPI Cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { title: "المعاهد", value: (stats as any)?.institutes ?? "—", Icon: School },
+            ...(typeof (stats as any)?.institutes === "number"
+              ? [{ title: "المعاهد", value: (stats as any)?.institutes, Icon: School }]
+              : []),
+
             { title: "الطلاب", value: (stats as any)?.students ?? "—", Icon: Users },
             { title: "الحلقات", value: (stats as any)?.circles ?? "—", Icon: BookOpen },
             { title: "المعلمين", value: (stats as any)?.teachers ?? "—", Icon: School },
@@ -214,10 +229,8 @@ export default function AdminDashboard() {
           {quick.map((c, i) => {
             const Icon = c.icon
 
-            // ✅ التناوب (لو ما في tone ثابت)
-            const COLS = 4 // عدد الأعمدة (xl:grid-cols-4)
+            const COLS = 4
             const tone: Tone = c.tone ?? (Math.floor(i / COLS) % 2 === 0 ? "brand" : "beige")
-
             const palette = toneText(tone)
 
             const box = (
@@ -228,7 +241,6 @@ export default function AdminDashboard() {
                   toneClass(tone),
                 ].join(" ")}
               >
-                {/* watermark */}
                 <div
                   className="absolute -left-8 -bottom-10 text-[110px]"
                   style={{ color: palette.watermark }}
@@ -306,9 +318,13 @@ export default function AdminDashboard() {
         <Card>
           <CardHeader className="flex items-center justify-between">
             <div className="font-extrabold text-[var(--text)]">آخر المعاهد</div>
-            <Link to="/admin/institutes">
-              <Button size="sm" variant="outline">عرض الكل</Button>
-            </Link>
+
+            {/* عرض الكل فقط للسوبر أدمن */}
+            {isSuperAdmin && (
+              <Link to="/admin/institutes">
+                <Button size="sm" variant="outline">عرض الكل</Button>
+              </Link>
+            )}
           </CardHeader>
 
           <CardContent>

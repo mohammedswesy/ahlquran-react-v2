@@ -1,11 +1,15 @@
-type CardsProps = { totals: Record<string, number> }
+type CardsProps = { totals: Record<string, number | null | undefined> }
 
 export default function DashboardCards({ totals }: CardsProps) {
     const items = [
-        { label: "المعاهد", value: totals?.institutes ?? 0 },
-        { label: "المعلمون", value: totals?.teachers ?? 0 },
-        { label: "الطلبة", value: totals?.students ?? 0 },
-        { label: "الحلقات", value: totals?.circles ?? 0 },
+
+        ...(typeof totals?.institutes === "number"
+            ? [{ label: "المعاهد", value: totals.institutes }]
+            : []),
+
+        { label: "المعلمون", value: Number(totals?.teachers ?? 0) },
+        { label: "الطلبة", value: Number(totals?.students ?? 0) },
+        { label: "الحلقات", value: Number(totals?.circles ?? 0) },
     ]
 
     return (

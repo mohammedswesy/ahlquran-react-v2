@@ -13,8 +13,14 @@ import {
 } from "react-icons/pi"
 
 export type Role =
-    | "super-admin" | "org-admin" | "institute-admin" | "sub-admin"
-    | "teacher" | "student" | "parent" | "employee"
+    | "super-admin"
+    | "org-admin"
+    | "institute-admin"
+    | "sub-admin"
+    | "teacher"
+    | "student"
+    | "parent"
+    | "employee"
 
 export type NavItem = {
     key: string
@@ -22,7 +28,7 @@ export type NavItem = {
     to: string
     icon: IconType
     roles: Role[]
-    badgeKey?: string // اختياري: لعداد صغير
+    badgeKey?: string
 }
 
 export type NavSection = {
@@ -32,16 +38,34 @@ export type NavSection = {
     items: NavItem[]
 }
 
-const ADMIN_ROLES: Role[] = ["super-admin", "org-admin", "institute-admin", "sub-admin"]
+/** ========= Roles Buckets ========= */
+const SUPER_ADMIN: Role[] = ["super-admin"]
+
+// أدمنز المعاهد/المنظمة (إدارة داخلية وليست نظام عام)
+const ORG_ADMINS: Role[] = ["org-admin", "institute-admin", "sub-admin"]
+
+// كل الأدمنز (سوبر + أدمنز إدارة)
+const ALL_ADMINS: Role[] = ["super-admin", ...ORG_ADMINS]
+
+const ALL_USERS: Role[] = ["teacher", "student", "parent", "employee", ...ALL_ADMINS]
 
 export const NAV_SECTIONS: NavSection[] = [
+    /** ========= Dashboards ========= */
     {
         key: "dashboards",
         label: "لوحات",
-        roles: ["super-admin", "org-admin", "institute-admin", "sub-admin", "teacher", "student", "parent", "employee"],
+        roles: ALL_USERS,
         items: [
-            { key: "admin_dash", label: "لوحة القيادة", to: "/admin", icon: PiSquaresFourBold, roles: ADMIN_ROLES },
-            { key: "inst_dash", label: "لوحة مدير المعهد", to: "/institute/dashboard", icon: PiSquaresFourBold, roles: ["institute-admin", "sub-admin"] },
+            // سوبر أدمن: لوحة النظام العامة
+            { key: "admin_dash", label: "لوحة القيادة", to: "/admin", icon: PiSquaresFourBold, roles: ALL_ADMINS },
+           {
+                key: "inst_dash",
+                label: "لوحة مدير المعهد",
+                to: "/institute/dashboard",
+                icon: PiSquaresFourBold,
+                roles: ["institute-admin", "sub-admin"],
+            },
+
 
             { key: "teacher_dash", label: "لوحة المعلم", to: "/teacher", icon: PiSquaresFourBold, roles: ["teacher"] },
             { key: "student_dash", label: "لوحة الطالب", to: "/student", icon: PiSquaresFourBold, roles: ["student"] },
@@ -50,43 +74,60 @@ export const NAV_SECTIONS: NavSection[] = [
         ],
     },
 
+    /** ========= Admin Management ========= */
     {
         key: "management",
         label: "إدارة",
-        roles: ADMIN_ROLES,
+        roles: ALL_ADMINS,
         items: [
-            { key: "institutes", label: "المعاهد", to: "/admin/institutes", icon: PiBuildingsBold, roles: ADMIN_ROLES },
-            { key: "employees", label: "الموظفون", to: "/admin/employees", icon: PiChalkboardTeacherBold, roles: ADMIN_ROLES },
-            { key: "circles", label: "الحلقات", to: "/admin/circles", icon: PiBookOpenTextBold, roles: ADMIN_ROLES },
-            { key: "students", label: "الطلبة", to: "/admin/students", icon: PiUsersThreeBold, roles: ADMIN_ROLES },
-            { key: "parents", label: "أولياء الأمور", to: "/admin/parents", icon: PiUsersThreeBold, roles: ADMIN_ROLES },
-            { key: "teachers", label: "المعلمون", to: "/admin/teachers", icon: PiUsersThreeBold, roles: ADMIN_ROLES },
+
+            { key: "institutes", label: "المعاهد", to: "/admin/institutes", icon: PiBuildingsBold, roles: SUPER_ADMIN },
+            { key: "employees", label: "الموظفون", to: "/admin/employees", icon: PiChalkboardTeacherBold, roles: SUPER_ADMIN },
+
+            { key: "circles", label: "الحلقات", to: "/admin/circles", icon: PiBookOpenTextBold, roles: ALL_ADMINS },
+            { key: "students", label: "الطلبة", to: "/admin/students", icon: PiUsersThreeBold, roles: ALL_ADMINS },
+            { key: "parents", label: "أولياء الأمور", to: "/admin/parents", icon: PiUsersThreeBold, roles: ALL_ADMINS },
+            { key: "teachers", label: "المعلمون", to: "/admin/teachers", icon: PiUsersThreeBold, roles: ALL_ADMINS },
         ],
     },
 
+    /** ========= Operations ========= */
     {
         key: "operations",
         label: "تشغيل",
-        roles: ["teacher", "student", "parent", ...ADMIN_ROLES],
+        roles: ["teacher", "student", "parent", ...ORG_ADMINS, ...SUPER_ADMIN],
         items: [
+            // Teacher
             { key: "attendance", label: "الحضور والغياب", to: "/teacher/attendance", icon: PiClipboardTextBold, roles: ["teacher"] },
             { key: "my_circles", label: "حلقاتي", to: "/teacher/circles", icon: PiBookOpenTextBold, roles: ["teacher"] },
 
+            // Student
             { key: "student_schedule", label: "جدولي", to: "/student/schedule", icon: PiBookOpenTextBold, roles: ["student"] },
 
+            // Parent
             { key: "parent_children", label: "أبنائي", to: "/parent/children", icon: PiUsersThreeBold, roles: ["parent"] },
             { key: "parent_reports", label: "التقارير", to: "/parent/reports", icon: PiChartLineBold, roles: ["parent"] },
         ],
     },
 
+    /** ========= System ========= */
     {
         key: "system",
         label: "النظام",
-        roles: ["teacher", "student", "parent", "employee", ...ADMIN_ROLES],
+        roles: ALL_USERS,
         items: [
-            { key: "notifications", label: "الإشعارات", to: "/admin/notifications", icon: PiBellBold, roles: ADMIN_ROLES, badgeKey: "notifications" },
-            { key: "library", label: "المكتبة", to: "/library", icon: PiBooksBold, roles: ["teacher", "student", "parent", "employee", ...ADMIN_ROLES] },
-            { key: "settings", label: "الإعدادات", to: "/settings", icon: PiGearBold, roles: ["teacher", "student", "parent", "employee", ...ADMIN_ROLES] },
+
+            {
+                key: "notifications",
+                label: "الإشعارات",
+                to: "/admin/notifications",
+                icon: PiBellBold,
+                roles: ALL_ADMINS,
+                badgeKey: "notifications",
+            },
+
+            { key: "library", label: "المكتبة", to: "/library", icon: PiBooksBold, roles: ALL_USERS },
+            { key: "settings", label: "الإعدادات", to: "/settings", icon: PiGearBold, roles: ALL_USERS },
         ],
     },
 ]

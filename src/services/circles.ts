@@ -19,10 +19,31 @@ export type Circle = {
     [k: string]: any
 }
 
+
 function normalizeCircle(raw: any): Circle {
     const x = normalizeId(raw)
-    return { ...x } as Circle
+
+    let schedule: any = null
+
+    if (x.schedule) {
+        if (typeof x.schedule === "string") {
+            try {
+                schedule = JSON.parse(x.schedule)
+            } catch {
+                schedule = null
+            }
+        } else {
+            schedule = x.schedule
+        }
+    }
+
+    return {
+        ...x,
+        schedule,
+    } as Circle
 }
+
+
 
 export type ListCirclesParams = {
     page?: number
@@ -31,14 +52,41 @@ export type ListCirclesParams = {
     type?: string
     search?: string
 }
-
-export async function listCircles(params?: ListCirclesParams): Promise<any> {
-    const { data } = await api.get("/circles", { params })
-    // ممكن يرجع Resource Collection
-    if (Array.isArray(data?.data)) return { ...data, data: data.data.map(normalizeCircle) }
-    if (Array.isArray(data)) return data.map(normalizeCircle)
-    return data
+export type Paginated<T> = {
+    data: T[]
+    meta?: {
+        current_page: number
+        last_page: number
+        per_page?: number
+        total?: number
+    }
 }
+
+
+export async function listCircles(params?: ListCirclesParams): Promise<Paginated<Circle>> {
+    const { data } = await api.get("/circles", { params })
+
+    // Laravel Resource Collection غالباً: { data: [], meta: {} }
+    if (Array.isArray(data?.data)) {
+        return { ...data, data: data.data.map(normalizeCircle) }
+    }
+
+
+    if (Array.isArray(data)) {
+        return {
+            data: data.map(normalizeCircle),
+            meta: undefined,
+        }
+    }
+
+    // fallback
+    return {
+        data: Array.isArray(data?.data) ? data.data.map(normalizeCircle) : [],
+        meta: data?.meta,
+    }
+}
+
+
 export async function listCirclesByInstitute(institute_id: number): Promise<Circle[]> {
     const { data } = await api.get("/circles", { params: { institute_id, per_page: 1000 } })
 
@@ -99,7 +147,7 @@ function normalizeTeacherCircle(raw: any): TeacherCircle {
     }
 }
 
-/** ✅ حلقات المعلم الحالي */
+
 export async function listMyCircles(): Promise<TeacherCircle[]> {
     const { data } = await api.get("/teacher/circles")
 
